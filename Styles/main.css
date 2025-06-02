@@ -1,0 +1,82 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
+.container {
+  padding: 20px;
+}
+
+.container h1 {
+  color: #2979ff;
+  margin-bottom: 20px;
+}
+
+.container h2 {
+  color: #333;
+  margin-top: 20px;
+}
+
+.controls {
+  margin-bottom: 20px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  gap: 10px;
+}
+
+.controls button {
+  background-color: #2979ff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  -webkit-transition: background-color 0.3s;
+  transition: background-color 0.3s;
+}
+
+.controls button:hover {
+  background-color: #2962ff;
+}
+
+.results {
+  background-color: white;
+  border-radius: 4px;
+  padding: 15px;
+  -webkit-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.results .image-container {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-columns: (minmax(150px, 1fr))[auto-fill];
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.results .image-container .image-item {
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.results .image-container .image-item img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+}
+
+.results .image-container .image-item .image-url {
+  font-size: 12px;
+  margin-top: 5px;
+  word-break: break-all;
+  color: #666;
+}
+/*# sourceMappingURL=main.css.map */

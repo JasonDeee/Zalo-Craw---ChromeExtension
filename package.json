@@ -1,0 +1,16 @@
+{
+  "name": "zalo-image-crawler",
+  "version": "1.0.0",
+  "description": "Chrome Extension for crawling images from Zalo",
+  "main": "panel.js",
+  "scripts": {
+    "build:css": "sass Styles/main.scss:Styles/main.css",
+    "watch:css": "sass --watch Styles/main.scss:Styles/main.css",
+    "build": "npm run build:css"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "sass": "^1.69.5"
+  }
+}

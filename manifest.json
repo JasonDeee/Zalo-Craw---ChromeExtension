@@ -1,0 +1,12 @@
+{
+  "name": "Zalo Image Crawer - Chrome",
+  "description": "Base Level Extension",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "panel.html",
+    "default_icon": "LogoWhite.png"
+  },
+  "devtools_page": "devtools.html",
+  "permissions": ["storage", "activeTab", "scripting"]
+}
