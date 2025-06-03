@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Zalo Image Crawler</title>
+    <link rel="stylesheet" href="Styles/main.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .button-group {
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        background-color: #2979ff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s;
+      }
+      button:hover {
+        background-color: #2962ff;
+      }
+      button#copyData {
+        background-color: #4caf50;
+      }
+      button#copyData:hover {
+        background-color: #388e3c;
+      }
+      #result {
+        margin-top: 20px;
+        line-height: 1.5;
+      }
+      pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .message-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      .message-group {
+        border-bottom: 2px solid #f0f0f0;
+      }
+      .message-group:last-child {
+        border-bottom: none;
+      }
+      .sender-row {
+        background-color: #f0f6ff;
+      }
+      .sender-cell {
+        padding: 12px 15px;
+        font-weight: bold;
+        color: #2979ff;
+      }
+      .message-row {
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .message-row:last-child {
+        border-bottom: none;
+      }
+      .message-type {
+        padding: 10px 15px;
+        width: 80px;
+        color: #555;
+        font-weight: 500;
+        background-color: #f8f9fa;
+        vertical-align: top;
+      }
+      .message-content {
+        padding: 10px 15px;
+        vertical-align: top;
+      }
+      .message-content img {
+        max-width: 150px;
+        max-height: 150px;
+        border-radius: 4px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+      }
+      .image-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .image-item {
+        position: relative;
+        width: 150px;
+      }
+      .image-preview {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      .image-id {
+        font-size: 10px;
+        color: #666;
+        word-break: break-all;
+        margin-top: 3px;
+      }
+      .recall-message {
+        font-style: italic;
+        color: #888;
+      }
+      .tabs {
+        display: flex;
+        margin-top: 20px;
+        border-bottom: 1px solid #ddd;
+      }
+      .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: #f5f5f5;
+        border: 1px solid #ddd;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        margin-right: 5px;
+      }
+      .tab.active {
+        background-color: white;
+        border-bottom: 1px solid white;
+        margin-bottom: -1px;
+        font-weight: bold;
+      }
+      .tab-content {
+        display: none;
+        padding: 20px;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .status {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 4px;
+        background-color: #e8f5e9;
+        color: #388e3c;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Zalo Crawler</h1>
+        <div class="button-group">
+          <button id="startCrawl">Bắt đầu Crawl Zalo</button>
+          <button id="copyData">Sao chép dữ liệu</button>
+        </div>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="table">Bảng dữ liệu</div>
+        <div class="tab" data-tab="json">JSON</div>
+      </div>
+
+      <div id="tableView" class="tab-content active">
+        <div id="messageTable"></div>
+      </div>
+
+      <div id="jsonView" class="tab-content">
+        <div id="result"></div>
+      </div>
+    </div>
+
+    <script src="panel.js"></script>
+  </body>
+</html>

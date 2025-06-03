@@ -1,0 +1,13 @@
+// Tôi sẽ giao tiếp với bạn ở đây
+
+chat-item [có -zavatar]
+    --- chat-item
+    --- chat-item
+    --- chat-item
+    --- chat-item
+
+chat-item [có -zavatar]
+    --- chat-item
+    --- chat-item
+    --- chat-item
+    --- chat-item  

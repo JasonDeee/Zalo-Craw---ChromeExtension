@@ -1,0 +1,9 @@
+{
+    "version": 3,
+    "mappings": "AAAA,OAAO,CAAC,iFAAI;AACZ,AAAA,KAAK,CAAC;EACJ,WAAW,CAAA,2BAAC;EACZ,aAAa,CAAA,6BAAC;EACd,YAAY,CAAA,yBAAC;EACb,WAAW,CAAA,2BAAC;EACZ,eAAe,CAAA,gCAAC;EAEhB,mBAAmB,CAAA,oCAAC;CACrB",
+    "sources": [
+        "Vx_StylePackage.scss"
+    ],
+    "names": [],
+    "file": "Vx_StylePackage.css"
+}

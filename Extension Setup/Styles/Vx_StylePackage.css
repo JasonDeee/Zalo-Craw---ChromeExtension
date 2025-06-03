@@ -1,0 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap");
+:root {
+  --MainColor: var(--text-color, #0c1136);
+  --AccentColor: var(--accent-color, #e72166);
+  --WhiteColor: var(--white-color, #fff);
+  --GrayColor: var(--gray-color, #e9e7e7);
+  --DeepGrayColor: var(--deep-gray-color, #c9c7c7);
+  --SecondAccentColor: var(--second-accent-color, #ffe9f1);
+}
+/*# sourceMappingURL=Vx_StylePackage.css.map */
