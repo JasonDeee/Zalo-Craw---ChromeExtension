@@ -43,6 +43,24 @@
       button#copyData:hover {
         background-color: #388e3c;
       }
+      button#checkData {
+        background-color: #ff9800;
+      }
+      button#checkData:hover {
+        background-color: #f57c00;
+      }
+      button#convertData {
+        background-color: #9c27b0;
+      }
+      button#convertData:hover {
+        background-color: #7b1fa2;
+      }
+      button#getAllImages {
+        background-color: #00796b;
+      }
+      button#getAllImages:hover {
+        background-color: #00695c;
+      }
       #result {
         margin-top: 20px;
         line-height: 1.5;
@@ -70,6 +88,21 @@
       .message-group:last-child {
         border-bottom: none;
       }
+      .message-group.BorderAlert {
+        border: 2px solid #ff5252;
+        position: relative;
+      }
+      .message-group.BorderAlert::before {
+        content: "⚠️ Dữ liệu có thể không đúng";
+        position: absolute;
+        top: 0;
+        right: 10px;
+        background-color: #ff5252;
+        color: white;
+        padding: 2px 8px;
+        font-size: 12px;
+        border-radius: 0 0 4px 4px;
+      }
       .sender-row {
         background-color: #f0f6ff;
       }
@@ -78,11 +111,24 @@
         font-weight: bold;
         color: #2979ff;
       }
+      .client-cell {
+        padding: 12px 15px;
+        font-weight: bold;
+        color: #9c27b0;
+        background-color: #f3e5f5;
+      }
       .message-row {
         border-bottom: 1px solid #f0f0f0;
+        position: relative;
       }
       .message-row:last-child {
         border-bottom: none;
+      }
+      .message-row:hover {
+        background-color: #f9f9f9;
+      }
+      .message-row:hover .delete-message {
+        display: flex;
       }
       .message-type {
         padding: 10px 15px;
@@ -95,6 +141,7 @@
       .message-content {
         padding: 10px 15px;
         vertical-align: top;
+        position: relative;
       }
       .message-content img {
         max-width: 150px;
@@ -102,6 +149,45 @@
         border-radius: 4px;
         margin-right: 5px;
         margin-bottom: 5px;
+      }
+      .delete-message {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        background-color: #ff5252;
+        color: white;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 10;
+      }
+      .delete-message:hover {
+        background-color: #d32f2f;
+      }
+      .download-image {
+        position: absolute;
+        right: 5px;
+        bottom: 5px;
+        width: 24px;
+        height: 24px;
+        background-color: rgba(0, 121, 107, 0.8);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 10;
+      }
+      .download-image:hover {
+        background-color: #00695c;
       }
       .image-grid {
         display: flex;
@@ -168,6 +254,23 @@
         color: #388e3c;
         display: none;
       }
+      .error-reason {
+        margin-top: 5px;
+        padding: 5px;
+        background-color: #ffebee;
+        color: #d32f2f;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      .no-data-message {
+        padding: 20px;
+        text-align: center;
+        color: #757575;
+        font-style: italic;
+      }
+      .error-table .message-group {
+        margin-bottom: 20px;
+      }
     </style>
   </head>
   <body>
@@ -176,6 +279,9 @@
         <h1>Zalo Crawler</h1>
         <div class="button-group">
           <button id="startCrawl">Bắt đầu Crawl Zalo</button>
+          <button id="checkData">Kiểm tra dữ liệu chat</button>
+          <button id="convertData">Chuyển đổi dữ liệu crawl</button>
+          <button id="getAllImages">Get All Images</button>
           <button id="copyData">Sao chép dữ liệu</button>
         </div>
       </div>
@@ -183,12 +289,17 @@
       <div id="status" class="status"></div>
 
       <div class="tabs">
-        <div class="tab active" data-tab="table">Bảng dữ liệu</div>
+        <div class="tab active" data-tab="table">Dữ liệu hợp lệ</div>
+        <div class="tab" data-tab="error">Dữ liệu lỗi</div>
         <div class="tab" data-tab="json">JSON</div>
       </div>
 
       <div id="tableView" class="tab-content active">
         <div id="messageTable"></div>
+      </div>
+
+      <div id="errorView" class="tab-content">
+        <div id="errorMessageTable"></div>
       </div>
 
       <div id="jsonView" class="tab-content">
