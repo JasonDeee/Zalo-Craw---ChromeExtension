@@ -1,5 +1,10 @@
 const RandomTokenTest = "meag@bhjkdfsxxxx2";
 
+// Biến để lưu trữ thông tin tải xuống
+let downloadQueue = [];
+let processedDownloads = new Set(); // Lưu trữ ID tải xuống đã xử lý
+let currentClientText = "";
+
 // Listen for messages from the extension's background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "GET_RANDOM_TOKEN") {
@@ -40,69 +45,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Required for async response
 });
 
-const NewMessageSchema = [
+const ImageListSchema = [
   {
-    sender: "Nguyen Van A",
-    messages: [
-      {
-        type: "text",
-        content: "Hello",
-      },
-      {
-        type: "image",
-        content: [
-          {
-            id: "img-1748913434621.3134982196889778592.g3002843645600913037-MESSAGE_LIST_GROUP_PHOTO",
-            preview_url:
-              "blob:https://chat.zalo.me/7522e953-8e89-4340-9f90-25b42bd8f07f",
-          },
-        ],
-      },
-    ],
+    text: "Tên khách hàng",
+    image_names: ["image_1.jpg", "image_2.jpg", "image_3.jpg"],
   },
   {
-    sender: "Le Van B",
-    messages: [
-      {
-        type: "text",
-        content: "Hello",
-      },
-      {
-        type: "image",
-        content: [
-          {
-            id: "img-1748913434621.3134982196889778592.g3002843645600913037-MESSAGE_LIST_GROUP_PHOTO",
-            preview_url:
-              "blob:https://chat.zalo.me/7522e953-8e89-4340-9f90-25b42bd8f07f",
-          },
-        ],
-      },
-      {
-        type: "text",
-        content: "Hello",
-      },
-      {
-        type: "text",
-        content: "Hello",
-      },
-    ],
+    text: "Tên khách hàng",
+    image_names: ["image_1.jpg", "image_2.jpg", "image_3.jpg"],
   },
 ];
 
-const convertedSchema = {
-  clients: [
-    {
-      text: "Hello",
-      images: [
-        {
-          id: "img-1748913434621.3134982196889778592.g3002843645600913037-MESSAGE_LIST_GROUP_PHOTO",
-          preview_url:
-            "blob:https://chat.zalo.me/7522e953-8e89-4340-9f90-25b42bd8f07f",
-        },
-      ],
-      error: false,
-    },
-  ],
+// Schema để lưu trữ thông tin tải xuống thực tế
+const DownloadedImageSchema = {
+  clients: [],
 };
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -115,6 +71,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const getAllImagesButton = document.getElementById("getAllImages");
   const messageTableElement = document.getElementById("messageTable");
   const errorMessageTableElement = document.getElementById("errorMessageTable");
+  const downloadsTableElement = document.getElementById("downloadsTable");
+  const exportDownloadsButton = document.getElementById("exportDownloads");
 
   // Schema mẫu để lưu trữ dữ liệu hợp lệ
   const messageSchema = {
@@ -269,21 +227,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
           console.log("Crawled data:", messageSchema);
           console.log("Error data:", errorMessageSchema);
-
-          // Lưu dữ liệu vào localStorage để có thể sử dụng sau này
-          try {
-            chrome.storage.local.set(
-              {
-                zaloMessages: messageSchema,
-                zaloErrorMessages: errorMessageSchema,
-              },
-              function () {
-                console.log("Dữ liệu đã được lưu vào storage");
-              }
-            );
-          } catch (error) {
-            console.error("Không thể lưu dữ liệu vào storage:", error);
-          }
         } else {
           resultElement.textContent = "Không tìm thấy dữ liệu phù hợp.";
           statusElement.textContent = "Không tìm thấy dữ liệu phù hợp.";
@@ -420,22 +363,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (activeTab === "json") {
       displayJsonData(convertedDataSchema);
     }
-
-    // Lưu dữ liệu mới vào storage
-    try {
-      chrome.storage.local.set(
-        {
-          zaloMessages: messageSchema,
-          zaloErrorMessages: errorMessageSchema,
-          zaloConvertedData: convertedDataSchema,
-        },
-        function () {
-          console.log("Dữ liệu đã được cập nhật trong storage");
-        }
-      );
-    } catch (error) {
-      console.error("Không thể cập nhật dữ liệu vào storage:", error);
-    }
   });
 
   // Sự kiện click nút tải tất cả hình ảnh
@@ -476,106 +403,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     statusElement.textContent = `Chuẩn bị tải ${totalImages} hình ảnh...`;
 
-    // Tạo script để tải từng hình ảnh
-    chrome.devtools.inspectedWindow.eval(
-      `
-      (function() {
-        // Hàm tải một hình ảnh từ ID
-        function downloadImage(imageId) {
-          return new Promise((resolve, reject) => {
-            try {
-              // Tìm hình ảnh theo ID
-              const imageElement = document.getElementById(imageId);
-              
-              if (!imageElement) {
-                console.warn("Không tìm thấy hình ảnh với ID:", imageId);
-                resolve(false);
-                return;
-              }
-              
-              // Tạo sự kiện chuột phải
-              const contextEvent = new MouseEvent("contextmenu", {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-              });
-              
-              // Thực hiện chuột phải vào hình ảnh
-              imageElement.dispatchEvent(contextEvent);
-              
-              // Đợi một chút để context menu xuất hiện
-              setTimeout(() => {
-                // Tìm menu tải xuống (phần tử thứ 3 trong context menu)
-                const menuItems = document.querySelectorAll(
-                  ".popover-v3 .zmenu-body .zmenu-item"
-                );
-                
-                if (menuItems.length >= 3) {
-                  // Click vào nút "Tải xuống"
-                  menuItems[2].click();
-                  resolve(true);
-                } else {
-                  console.warn("Không tìm thấy menu tải xuống");
-                  resolve(false);
-                }
-              }, 100);
-            } catch (error) {
-              console.error("Lỗi khi tải hình ảnh:", error);
-              resolve(false);
-            }
-          });
-        }
-        
-        // Danh sách ID hình ảnh cần tải
-        const imageIds = ${JSON.stringify(
-          clients.flatMap((client) => client.images.map((img) => img.id))
-        )};
-        
-        // Tải tuần tự từng hình ảnh
-        async function downloadSequentially() {
-          let successCount = 0;
-          let failCount = 0;
-          
-          for (let i = 0; i < imageIds.length; i++) {
-            // Cập nhật trạng thái tải
-            console.log("Downloading image " + (i + 1) + "/" + imageIds.length + ": " + imageIds[i]);
-            
-            const success = await downloadImage(imageIds[i]);
-            if (success) {
-              successCount++;
-            } else {
-              failCount++;
-            }
-            
-            // Đợi một chút trước khi tải hình tiếp theo để tránh bị chặn
-            await new Promise(resolve => setTimeout(resolve, 250));
-          }
-          
-          return { successCount, failCount };
-        }
-        
-        // Bắt đầu tải
-        return downloadSequentially();
-      })();
-      `,
-      (result, isException) => {
-        if (isException) {
-          console.error("Lỗi khi tải hình ảnh:", isException);
-          statusElement.textContent =
-            "Lỗi khi tải hình ảnh: " + isException.value;
-          statusElement.style.backgroundColor = "#ffebee";
-          statusElement.style.color = "#d32f2f";
-          return;
-        }
-
-        if (result) {
-          const { successCount, failCount } = result;
-          statusElement.textContent = `Đã tải ${successCount} hình ảnh thành công, ${failCount} hình ảnh thất bại.`;
-          statusElement.style.backgroundColor = "#e8f5e9";
-          statusElement.style.color = "#388e3c";
-        }
-      }
-    );
+    // Chuẩn bị dữ liệu cho tải xuống
+    const imageDataList = [];
+    clients.forEach((client) => {
+      client.images.forEach((img) => {
+        imageDataList.push({
+          id: img.id,
+          clientText: client.text,
+        });
+      });
+    });
 
     // Hiển thị thông báo đang tải
     let dots = "";
@@ -584,10 +421,168 @@ document.addEventListener("DOMContentLoaded", function () {
       statusElement.textContent = `Đang tải hình ảnh${dots} (Quá trình này có thể mất vài phút)`;
     }, 500);
 
-    // Dừng thông báo sau khoảng thời gian ước tính
-    setTimeout(() => {
-      clearInterval(loadingInterval);
-    }, totalImages * 2000); // Ước tính thời gian hoàn thành
+    // Biến để theo dõi tiến trình
+    let currentIndex = 0;
+    let successCount = 0;
+    let failCount = 0;
+
+    // Hàm tải một hình ảnh và đợi cho đến khi có tên file
+    function downloadSingleImageAndWait(imageData) {
+      return new Promise((resolveDownload) => {
+        // Tạo một listener tạm thời để theo dõi sự kiện tải xuống
+        const downloadListener = (message) => {
+          if (
+            (message.action === "DOWNLOAD_CREATED" ||
+              message.action === "DOWNLOAD_COMPLETED") &&
+            downloadQueue.length > 0 &&
+            downloadQueue[0].imageId === imageData.id
+          ) {
+            // Đã nhận được thông tin tải xuống cho hình ảnh này
+            console.log(
+              `Đã nhận thông tin tải xuống cho hình ảnh ${imageData.id}:`,
+              message.downloadItem
+            );
+
+            // Xóa listener vì không cần nữa
+            chrome.runtime.onMessage.removeListener(downloadListener);
+
+            // Xóa khỏi hàng đợi vì đã xử lý xong
+            downloadQueue.shift();
+
+            // Đánh dấu thành công
+            successCount++;
+
+            // Hoàn thành promise
+            resolveDownload(true);
+          }
+        };
+
+        // Đăng ký listener
+        chrome.runtime.onMessage.addListener(downloadListener);
+
+        // Thêm timeout để tránh treo
+        const timeoutId = setTimeout(() => {
+          chrome.runtime.onMessage.removeListener(downloadListener);
+          console.log(`Hết thời gian chờ cho hình ảnh ${imageData.id}`);
+          failCount++;
+          resolveDownload(false);
+        }, 10000); // 10 giây timeout
+
+        // Thêm vào hàng đợi tải xuống
+        downloadQueue.push({
+          imageId: imageData.id,
+          clientText: imageData.clientText,
+          timestamp: Date.now(),
+        });
+
+        // Gửi lệnh tải xuống
+        chrome.devtools.inspectedWindow.eval(
+          `
+          (function() {
+            // Hàm tải một hình ảnh từ ID
+            async function downloadImage(imageId) {
+              return new Promise((resolve, reject) => {
+                try {
+                  // Tìm hình ảnh theo ID
+                  const imageElement = document.getElementById(imageId);
+                  
+                  if (!imageElement) {
+                    console.warn("Không tìm thấy hình ảnh với ID:", imageId);
+                    resolve(false);
+                    return;
+                  }
+                  
+                  // Tạo sự kiện chuột phải
+                  const contextEvent = new MouseEvent("contextmenu", {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                  });
+                  
+                  // Thực hiện chuột phải vào hình ảnh
+                  imageElement.dispatchEvent(contextEvent);
+                  
+                  // Đợi một chút để context menu xuất hiện
+                  setTimeout(() => {
+                    // Tìm menu tải xuống (phần tử thứ 3 trong context menu)
+                    const menuItems = document.querySelectorAll(
+                      ".popover-v3 .zmenu-body .zmenu-item"
+                    );
+                    
+                    if (menuItems.length >= 3) {
+                      // Click vào nút "Tải xuống"
+                      menuItems[2].click();
+                      resolve(true);
+                    } else {
+                      console.warn("Không tìm thấy menu tải xuống");
+                      resolve(false);
+                    }
+                  }, 100);
+                } catch (error) {
+                  console.error("Lỗi khi tải hình ảnh:", error);
+                  resolve(false);
+                }
+              });
+            }
+            
+            // Tải hình ảnh
+            return downloadImage("${imageData.id}");
+          })();
+          `,
+          (result, isException) => {
+            if (isException) {
+              console.error("Lỗi khi tải hình ảnh:", isException);
+              clearTimeout(timeoutId);
+              chrome.runtime.onMessage.removeListener(downloadListener);
+              failCount++;
+              resolveDownload(false);
+            }
+
+            // Nếu không thành công, hủy ngay
+            if (result === false) {
+              clearTimeout(timeoutId);
+              chrome.runtime.onMessage.removeListener(downloadListener);
+              failCount++;
+              resolveDownload(false);
+            }
+
+            // Nếu thành công, đợi sự kiện tải xuống từ background script
+            // Không resolve ở đây vì chúng ta cần đợi sự kiện từ background
+          }
+        );
+      });
+    }
+
+    // Tải tuần tự từng hình ảnh
+    function processImages(index) {
+      if (index >= imageDataList.length) {
+        // Đã hoàn thành tất cả
+        clearInterval(loadingInterval);
+        statusElement.textContent = `Đã tải ${successCount} hình ảnh thành công, ${failCount} hình ảnh thất bại.`;
+        statusElement.style.backgroundColor = "#e8f5e9";
+        statusElement.style.color = "#388e3c";
+        return;
+      }
+
+      const imageData = imageDataList[index];
+      currentIndex = index;
+
+      // Cập nhật trạng thái
+      statusElement.textContent = `Đang tải hình ảnh ${index + 1}/${
+        imageDataList.length
+      }: ${imageData.id}`;
+
+      // Tải hình ảnh và đợi hoàn thành
+      downloadSingleImageAndWait(imageData).then((success) => {
+        // Đợi thêm 300ms trước khi tải hình tiếp theo
+        setTimeout(() => {
+          processImages(index + 1);
+        }, 300);
+      });
+    }
+
+    // Bắt đầu tải hình ảnh
+    processImages(0);
   }
 
   // Hàm chuyển đổi dữ liệu
@@ -711,7 +706,7 @@ document.addEventListener("DOMContentLoaded", function () {
           downloadButton.innerHTML = "⬇️"; // Biểu tượng tải xuống
           downloadButton.title = "Tải hình ảnh này";
           downloadButton.addEventListener("click", function () {
-            downloadSingleImage(img.id);
+            downloadSingleImage(img.id, client.text);
           });
 
           imageItem.appendChild(image);
@@ -736,92 +731,168 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Hàm tải một hình ảnh duy nhất
-  function downloadSingleImage(imageId) {
+  function downloadSingleImage(imageId, clientText = "") {
     statusElement.style.display = "block";
     statusElement.textContent = `Đang tải hình ảnh: ${imageId}...`;
     statusElement.style.backgroundColor = "#e3f2fd";
     statusElement.style.color = "#1976d2";
 
-    chrome.devtools.inspectedWindow.eval(
-      `
-      (function() {
-        // Hàm tải một hình ảnh từ ID
-        function downloadImage(imageId) {
-          return new Promise((resolve, reject) => {
-            try {
-              // Tìm hình ảnh theo ID
-              const imageElement = document.getElementById(imageId);
-              
-              if (!imageElement) {
-                console.warn("Không tìm thấy hình ảnh với ID:", imageId);
-                resolve(false);
-                return;
-              }
-              
-              // Tạo sự kiện chuột phải
-              const contextEvent = new MouseEvent("contextmenu", {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-              });
-              
-              // Thực hiện chuột phải vào hình ảnh
-              imageElement.dispatchEvent(contextEvent);
-              
-              // Đợi một chút để context menu xuất hiện
-              setTimeout(() => {
-                // Tìm menu tải xuống (phần tử thứ 3 trong context menu)
-                const menuItems = document.querySelectorAll(
-                  ".popover-v3 .zmenu-body .zmenu-item"
-                );
+    // Tạo Promise để theo dõi quá trình tải xuống
+    const downloadPromise = new Promise((resolve) => {
+      // Tạo một listener tạm thời để theo dõi sự kiện tải xuống
+      const downloadListener = (message) => {
+        if (
+          (message.action === "DOWNLOAD_CREATED" ||
+            message.action === "DOWNLOAD_COMPLETED") &&
+          downloadQueue.length > 0 &&
+          downloadQueue[0].imageId === imageId
+        ) {
+          // Đã nhận được thông tin tải xuống cho hình ảnh này
+          console.log(
+            `Đã nhận thông tin tải xuống cho hình ảnh ${imageId}:`,
+            message.downloadItem
+          );
+
+          // Xóa listener vì không cần nữa
+          chrome.runtime.onMessage.removeListener(downloadListener);
+
+          // Xóa khỏi hàng đợi vì đã xử lý xong
+          downloadQueue.shift();
+
+          // Hoàn thành promise
+          resolve(true);
+        }
+      };
+
+      // Đăng ký listener
+      chrome.runtime.onMessage.addListener(downloadListener);
+
+      // Thêm timeout để tránh treo
+      const timeoutId = setTimeout(() => {
+        chrome.runtime.onMessage.removeListener(downloadListener);
+        console.log(`Hết thời gian chờ cho hình ảnh ${imageId}`);
+        resolve(false);
+      }, 10000); // 10 giây timeout
+
+      // Thêm vào hàng đợi tải xuống
+      downloadQueue.push({
+        imageId: imageId,
+        clientText: clientText,
+        timestamp: Date.now(),
+      });
+
+      console.log("Thêm vào hàng đợi tải xuống:", {
+        imageId: imageId,
+        clientText: clientText,
+      });
+
+      chrome.devtools.inspectedWindow.eval(
+        `
+        (function() {
+          // Hàm tải một hình ảnh từ ID
+          async function downloadImage(imageId) {
+            return new Promise((resolve, reject) => {
+              try {
+                // Tìm hình ảnh theo ID
+                const imageElement = document.getElementById(imageId);
                 
-                if (menuItems.length >= 3) {
-                  // Click vào nút "Tải xuống"
-                  menuItems[2].click();
-                  resolve(true);
-                } else {
-                  console.warn("Không tìm thấy menu tải xuống");
+                if (!imageElement) {
+                  console.warn("Không tìm thấy hình ảnh với ID:", imageId);
                   resolve(false);
+                  return;
                 }
-              }, 100);
-            } catch (error) {
-              console.error("Lỗi khi tải hình ảnh:", error);
-              resolve(false);
-            }
-          });
-        }
-        
-        // Tải hình ảnh
-        return downloadImage("${imageId}");
-      })();
-      `,
-      (result, isException) => {
-        if (isException) {
-          console.error("Lỗi khi tải hình ảnh:", isException);
-          statusElement.textContent =
-            "Lỗi khi tải hình ảnh: " + isException.value;
-          statusElement.style.backgroundColor = "#ffebee";
-          statusElement.style.color = "#d32f2f";
-          return;
-        }
+                
+                // Tạo sự kiện chuột phải
+                const contextEvent = new MouseEvent("contextmenu", {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window,
+                });
+                
+                // Thực hiện chuột phải vào hình ảnh
+                imageElement.dispatchEvent(contextEvent);
+                
+                // Đợi một chút để context menu xuất hiện
+                setTimeout(() => {
+                  // Tìm menu tải xuống (phần tử thứ 3 trong context menu)
+                  const menuItems = document.querySelectorAll(
+                    ".popover-v3 .zmenu-body .zmenu-item"
+                  );
+                  
+                  if (menuItems.length >= 3) {
+                    // Click vào nút "Tải xuống"
+                    menuItems[2].click();
+                    resolve(true);
+                  } else {
+                    console.warn("Không tìm thấy menu tải xuống");
+                    resolve(false);
+                  }
+                }, 100);
+              } catch (error) {
+                console.error("Lỗi khi tải hình ảnh:", error);
+                resolve(false);
+              }
+            });
+          }
+          
+          // Tải hình ảnh
+          return downloadImage("${imageId}");
+        })();
+        `,
+        (result, isException) => {
+          if (isException) {
+            console.error("Lỗi khi tải hình ảnh:", isException);
+            clearTimeout(timeoutId);
+            chrome.runtime.onMessage.removeListener(downloadListener);
 
-        if (result === true) {
-          statusElement.textContent = "Đã tải hình ảnh thành công!";
-          statusElement.style.backgroundColor = "#e8f5e9";
-          statusElement.style.color = "#388e3c";
+            statusElement.textContent =
+              "Lỗi khi tải hình ảnh: " + isException.value;
+            statusElement.style.backgroundColor = "#ffebee";
+            statusElement.style.color = "#d32f2f";
 
-          // Tự động ẩn thông báo sau 3 giây
-          setTimeout(() => {
-            statusElement.style.display = "none";
-          }, 3000);
-        } else {
-          statusElement.textContent =
-            "Không thể tải hình ảnh. Vui lòng thử lại.";
-          statusElement.style.backgroundColor = "#fff8e1";
-          statusElement.style.color = "#f57c00";
+            // Xóa khỏi hàng đợi nếu có lỗi
+            downloadQueue = downloadQueue.filter(
+              (item) => item.imageId !== imageId
+            );
+            resolve(false);
+            return;
+          }
+
+          if (result === false) {
+            statusElement.textContent =
+              "Không thể tải hình ảnh. Vui lòng thử lại.";
+            statusElement.style.backgroundColor = "#fff8e1";
+            statusElement.style.color = "#f57c00";
+
+            clearTimeout(timeoutId);
+            chrome.runtime.onMessage.removeListener(downloadListener);
+
+            // Xóa khỏi hàng đợi nếu không thành công
+            downloadQueue = downloadQueue.filter(
+              (item) => item.imageId !== imageId
+            );
+            resolve(false);
+          }
+
+          // Nếu thành công, đợi sự kiện tải xuống từ background script
+          // Không resolve ở đây vì chúng ta cần đợi sự kiện từ background
         }
+      );
+    });
+
+    // Xử lý kết quả sau khi tải xuống
+    downloadPromise.then((success) => {
+      if (success) {
+        statusElement.textContent = "Đã tải hình ảnh thành công!";
+        statusElement.style.backgroundColor = "#e8f5e9";
+        statusElement.style.color = "#388e3c";
+
+        // Tự động ẩn thông báo sau 3 giây
+        setTimeout(() => {
+          statusElement.style.display = "none";
+        }, 3000);
       }
-    );
+    });
   }
 
   // Hàm kiểm tra dữ liệu chat
@@ -897,21 +968,6 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(function () {
       statusElement.style.display = "none";
     }, 2000);
-
-    // Lưu dữ liệu mới vào storage
-    try {
-      chrome.storage.local.set(
-        {
-          zaloMessages: messageSchema,
-          zaloErrorMessages: errorMessageSchema,
-        },
-        function () {
-          console.log("Dữ liệu đã được cập nhật trong storage");
-        }
-      );
-    } catch (error) {
-      console.error("Không thể cập nhật dữ liệu vào storage:", error);
-    }
   }
 
   // Hàm hiển thị dữ liệu dưới dạng JSON
@@ -1169,6 +1225,203 @@ document.addEventListener("DOMContentLoaded", function () {
     errorMessageTableElement.appendChild(table);
   }
 
+  // Sự kiện click nút xuất dữ liệu tải xuống
+  exportDownloadsButton.addEventListener("click", function () {
+    if (DownloadedImageSchema.clients.length === 0) {
+      statusElement.style.display = "block";
+      statusElement.textContent = "Chưa có dữ liệu tải xuống nào.";
+      statusElement.style.backgroundColor = "#fff8e1";
+      statusElement.style.color = "#f57c00";
+      return;
+    }
+
+    const jsonString = JSON.stringify(DownloadedImageSchema, null, 2);
+    navigator.clipboard.writeText(jsonString).then(
+      function () {
+        statusElement.style.display = "block";
+        statusElement.textContent =
+          "Đã sao chép dữ liệu tải xuống vào clipboard!";
+        statusElement.style.backgroundColor = "#e8f5e9";
+        statusElement.style.color = "#388e3c";
+        setTimeout(function () {
+          statusElement.style.display = "none";
+        }, 3000);
+      },
+      function (err) {
+        statusElement.style.display = "block";
+        statusElement.textContent = "Không thể sao chép dữ liệu: " + err;
+        statusElement.style.backgroundColor = "#ffebee";
+        statusElement.style.color = "#d32f2f";
+      }
+    );
+  });
+
+  // Hàm hiển thị dữ liệu tải xuống
+  function displayDownloadsData() {
+    // Xóa nội dung cũ
+    downloadsTableElement.innerHTML = "";
+
+    // Kiểm tra xem có dữ liệu không
+    if (DownloadedImageSchema.clients.length === 0) {
+      const noDataMessage = document.createElement("div");
+      noDataMessage.className = "no-data-message";
+      noDataMessage.textContent = "Chưa có dữ liệu tải xuống nào.";
+      downloadsTableElement.appendChild(noDataMessage);
+      return;
+    }
+
+    // Tạo bảng
+    const table = document.createElement("table");
+    table.className = "downloads-table";
+
+    // Tạo header
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+
+    const headerText = document.createElement("th");
+    headerText.textContent = "Nội dung văn bản";
+    headerRow.appendChild(headerText);
+
+    const headerImages = document.createElement("th");
+    headerImages.textContent = "Tên file hình ảnh";
+    headerRow.appendChild(headerImages);
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Tạo body
+    const tbody = document.createElement("tbody");
+
+    DownloadedImageSchema.clients.forEach((client) => {
+      const row = document.createElement("tr");
+
+      const textCell = document.createElement("td");
+      textCell.className = "client-text";
+      textCell.textContent = client.text || "(Không có nội dung)";
+      row.appendChild(textCell);
+
+      const imagesCell = document.createElement("td");
+      imagesCell.className = "image-names";
+
+      if (client.image_names && client.image_names.length > 0) {
+        const imageList = document.createElement("ul");
+        client.image_names.forEach((imageName) => {
+          const imageItem = document.createElement("li");
+          imageItem.textContent = imageName;
+          imageList.appendChild(imageItem);
+        });
+        imagesCell.appendChild(imageList);
+      } else {
+        imagesCell.textContent = "(Chưa có hình ảnh nào được tải xuống)";
+      }
+
+      row.appendChild(imagesCell);
+      tbody.appendChild(row);
+    });
+
+    table.appendChild(tbody);
+    downloadsTableElement.appendChild(table);
+  }
+
+  // Lắng nghe sự kiện tải xuống từ background script
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (
+      message.action === "DOWNLOAD_CREATED" ||
+      message.action === "DOWNLOAD_COMPLETED"
+    ) {
+      console.log(
+        `Nhận thông tin tải xuống: ${message.action}`,
+        message.downloadItem
+      );
+      const downloadItem = message.downloadItem;
+
+      // Kiểm tra xem có filename không
+      if (!downloadItem.filename) {
+        console.log("Bỏ qua thông tin tải xuống vì không có tên file");
+        sendResponse({ success: false, reason: "Không có tên file" });
+        return true;
+      }
+
+      // Kiểm tra xem đã xử lý tải xuống này chưa
+      const downloadKey = `${downloadItem.id}-${downloadItem.filename}`;
+      if (processedDownloads.has(downloadKey)) {
+        console.log(`Đã xử lý tải xuống này rồi: ${downloadKey}`);
+        sendResponse({ success: true, alreadyProcessed: true });
+        return true;
+      }
+
+      // Tìm trong hàng đợi tải xuống xem có imageId nào đang chờ
+      if (downloadQueue.length > 0) {
+        // Lấy mục tải xuống đầu tiên trong hàng đợi
+        // Lưu ý: Không xóa khỏi hàng đợi ở đây, việc xóa sẽ được thực hiện bởi Promise
+        const downloadInfo = downloadQueue[0];
+
+        console.log("Liên kết tải xuống với:", downloadInfo);
+
+        // Tìm hoặc tạo client trong schema tải xuống
+        let clientIndex = DownloadedImageSchema.clients.findIndex(
+          (client) => client.text === downloadInfo.clientText
+        );
+
+        if (clientIndex === -1) {
+          // Tạo client mới nếu chưa tồn tại
+          DownloadedImageSchema.clients.push({
+            text: downloadInfo.clientText,
+            image_names: [],
+          });
+          clientIndex = DownloadedImageSchema.clients.length - 1;
+        }
+
+        // Thêm tên file vào danh sách nếu chưa tồn tại
+        if (
+          !DownloadedImageSchema.clients[clientIndex].image_names.includes(
+            downloadItem.filename
+          )
+        ) {
+          DownloadedImageSchema.clients[clientIndex].image_names.push(
+            downloadItem.filename
+          );
+        }
+
+        // Đánh dấu là đã xử lý
+        processedDownloads.add(downloadKey);
+
+        // Hiển thị thông báo
+        statusElement.style.display = "block";
+        statusElement.textContent = `Đã tải xuống: ${downloadItem.filename} cho "${downloadInfo.clientText}"`;
+        statusElement.style.backgroundColor = "#e8f5e9";
+        statusElement.style.color = "#388e3c";
+
+        // Cập nhật hiển thị tab tải xuống nếu đang mở
+        const activeTab = document
+          .querySelector(".tab.active")
+          .getAttribute("data-tab");
+        if (activeTab === "downloads") {
+          displayDownloadsData();
+        }
+      } else {
+        console.log("Không tìm thấy thông tin trong hàng đợi tải xuống");
+      }
+
+      sendResponse({ success: true });
+    }
+    return true;
+  });
+
+  // Lắng nghe sự kiện từ content script
+  window.addEventListener("message", function (event) {
+    // Kiểm tra nguồn và loại thông điệp
+    if (event.data && event.data.type === "ZALO_DOWNLOAD_FAILED") {
+      console.log("Nhận thông báo tải xuống thất bại:", event.data);
+
+      // Xóa khỏi hàng đợi
+      downloadQueue = downloadQueue.filter(
+        (item) => item.imageId !== event.data.imageId
+      );
+      console.log("Đã xóa khỏi hàng đợi tải xuống:", event.data.imageId);
+    }
+  });
+
   // Xử lý chuyển đổi tab
   const tabs = document.querySelectorAll(".tab");
   tabs.forEach((tab) => {
@@ -1205,7 +1458,13 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (previousActiveTabId === "error") {
           // Nếu chuyển từ tab "Dữ liệu lỗi" sang
           displayJsonData(errorMessageSchema);
+        } else if (previousActiveTabId === "downloads") {
+          // Nếu chuyển từ tab "Tải xuống" sang
+          displayJsonData(DownloadedImageSchema);
         }
+      } else if (tabId === "downloads") {
+        // Hiển thị dữ liệu tải xuống
+        displayDownloadsData();
       }
     });
   });

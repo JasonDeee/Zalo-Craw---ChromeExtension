@@ -2,29 +2,52 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Zalo Crawler</title>
+    <title>Zalo Image Organizer</title>
     <style>
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
+        padding: 20px;
         background-color: #f5f5f5;
+        max-width: 800px;
+        margin: 0 auto;
       }
       .container {
-        text-align: center;
-        padding: 2rem;
         background: white;
         border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
-        width: 100%;
+        padding: 2rem;
       }
       h1 {
         color: #2c3e50;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      textarea {
+        width: 100%;
+        min-height: 200px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        font-family: monospace;
+        resize: vertical;
+        box-sizing: border-box;
       }
       .btn {
         background-color: #3498db;
@@ -35,73 +58,211 @@
         border-radius: 5px;
         cursor: pointer;
         transition: background-color 0.3s;
+        width: 100%;
       }
       .btn:hover {
         background-color: #2980b9;
       }
+      .btn:disabled {
+        background-color: #95a5a6;
+        cursor: not-allowed;
+      }
       .status {
         margin-top: 20px;
-        padding: 10px;
+        padding: 15px;
         border-radius: 5px;
         display: none;
       }
       .success {
         background-color: #d4edda;
         color: #155724;
+        display: block;
       }
       .error {
         background-color: #f8d7da;
         color: #721c24;
+        display: block;
+      }
+      .folder-list {
+        margin-top: 20px;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: #f8f9fa;
+      }
+      .folder-item {
+        padding: 5px;
+        border-bottom: 1px solid #eee;
+      }
+      .folder-item:last-child {
+        border-bottom: none;
+      }
+      .browse-btn {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        font-size: 14px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-top: 10px;
+      }
+      .browse-btn:hover {
+        background-color: #5a6268;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Zalo Crawler</h1>
-      <button id="getTokenBtn" class="btn">Get Token from Extension</button>
-      <div id="tokenDisplay" class="token-display" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; display: none;">
-        <h3>Token from Extension:</h3>
-        <p id="tokenValue" style="word-break: break-all; font-family: monospace; background: #f1f1f1; padding: 10px; border-radius: 4px;"></p>
+      <h1>Zalo Image Organizer</h1>
+
+      <div class="form-group">
+        <label for="folderPath">Đường dẫn thư mục chứa hình ảnh:</label>
+        <input
+          type="text"
+          id="folderPath"
+          placeholder="Nhập đường dẫn thư mục chứa hình ảnh..."
+        />
+        <button id="browseFolderBtn" class="browse-btn">Chọn thư mục</button>
+      </div>
+
+      <div class="form-group">
+        <label for="jsonData">Dữ liệu JSON (từ extension):</label>
+        <textarea
+          id="jsonData"
+          placeholder='Dán dữ liệu JSON từ extension vào đây. Ví dụ:
+{
+  "clients": [
+    {
+      "text": "Tên khách hàng 1",
+      "image_names": ["image1.jpg", "image2.jpg"]
+    },
+    {
+      "text": "Tên khách hàng 2",
+      "image_names": ["image3.jpg"]
+    }
+  ]
+}'
+        ></textarea>
+      </div>
+
+      <button id="processBtn" class="btn">Xử lý và tổ chức hình ảnh</button>
+
+      <div id="statusMessage" class="status"></div>
+
+      <div id="folderList" class="folder-list" style="display: none">
+        <h3>Danh sách thư mục đã tạo:</h3>
+        <div id="folderItems"></div>
       </div>
     </div>
 
     <script>
       const { ipcRenderer } = require("electron");
 
+      // Chọn thư mục
       document
-        .getElementById("getTokenBtn")
+        .getElementById("browseFolderBtn")
         .addEventListener("click", async () => {
-          const tokenDisplay = document.getElementById("tokenDisplay");
-          const tokenValue = document.getElementById("tokenValue");
-          
           try {
-            // Get the extension ID (replace with your actual extension ID)
-            const extensionId = "aodepfcnhkokkgiohcgfclldcfbcfaoo";
-            
-            // Show loading state
-            tokenValue.textContent = "Đang lấy token từ extension...";
-            tokenDisplay.style.display = "block";
-            
-            // Get the token from the extension
-            const result = await ipcRenderer.invoke(
-              "get-extension-token",
-              extensionId
-            );
-
-            if (result.success) {
-              tokenValue.textContent = result.token;
-              alert(`Đã lấy token từ extension thành công: ${result.token}`);
-            } else {
-              tokenValue.textContent = `Lỗi: ${result.error || 'Không thể lấy token'}`;
-              alert(`Lỗi: ${result.error || 'Không thể lấy token từ extension'}`);
-            }
+            const result = await ipcRenderer.invoke("select-folder");
+            if (result.canceled) return;
+            document.getElementById("folderPath").value = result.filePaths[0];
           } catch (error) {
-            console.error("Lỗi:", error);
-            tokenValue.textContent = `Lỗi: ${error.message || 'Đã xảy ra lỗi không xác định'}`;
-            tokenDisplay.style.display = "block";
-            alert("Đã xảy ra lỗi khi giao tiếp với extension");
+            showStatus("Lỗi khi chọn thư mục: " + error.message, "error");
           }
         });
+
+      // Xử lý khi nhấn nút
+      document
+        .getElementById("processBtn")
+        .addEventListener("click", async () => {
+          const folderPath = document.getElementById("folderPath").value.trim();
+          const jsonData = document.getElementById("jsonData").value.trim();
+
+          if (!folderPath) {
+            return showStatus(
+              "Vui lòng nhập đường dẫn thư mục chứa hình ảnh",
+              "error"
+            );
+          }
+
+          if (!jsonData) {
+            return showStatus("Vui lòng nhập dữ liệu JSON", "error");
+          }
+
+          try {
+            // Parse JSON data
+            const data = JSON.parse(jsonData);
+
+            // Kiểm tra cấu trúc JSON
+            if (!data.clients || !Array.isArray(data.clients)) {
+              return showStatus(
+                'Dữ liệu JSON không đúng định dạng. Cần có mảng "clients".',
+                "error"
+              );
+            }
+
+            // Disable button while processing
+            const processBtn = document.getElementById("processBtn");
+            processBtn.disabled = true;
+            processBtn.textContent = "Đang xử lý...";
+
+            showStatus("Đang xử lý...", "success");
+
+            // Gọi main process để xử lý
+            const result = await ipcRenderer.invoke("organize-images", {
+              folderPath,
+              clients: data.clients,
+            });
+
+            if (result.success) {
+              showStatus(
+                `Đã xử lý thành công! Đã tạo ${result.createdFolders.length} thư mục và di chuyển ${result.movedFiles} file.`,
+                "success"
+              );
+
+              // Hiển thị danh sách thư mục đã tạo
+              displayFolderList(result.createdFolders);
+            } else {
+              showStatus(`Lỗi: ${result.error}`, "error");
+            }
+          } catch (error) {
+            showStatus(`Lỗi khi xử lý: ${error.message}`, "error");
+          } finally {
+            // Re-enable button
+            const processBtn = document.getElementById("processBtn");
+            processBtn.disabled = false;
+            processBtn.textContent = "Xử lý và tổ chức hình ảnh";
+          }
+        });
+
+      // Hiển thị thông báo trạng thái
+      function showStatus(message, type) {
+        const statusElement = document.getElementById("statusMessage");
+        statusElement.textContent = message;
+        statusElement.className = "status " + type;
+        statusElement.style.display = "block";
+      }
+
+      // Hiển thị danh sách thư mục đã tạo
+      function displayFolderList(folders) {
+        const folderList = document.getElementById("folderList");
+        const folderItems = document.getElementById("folderItems");
+
+        folderItems.innerHTML = "";
+
+        folders.forEach((folder) => {
+          const folderItem = document.createElement("div");
+          folderItem.className = "folder-item";
+          folderItem.textContent = folder;
+          folderItems.appendChild(folderItem);
+        });
+
+        folderList.style.display = "block";
+      }
     </script>
   </body>
 </html>

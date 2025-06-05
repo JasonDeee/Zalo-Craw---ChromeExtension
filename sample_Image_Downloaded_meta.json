@@ -1,0 +1,18 @@
+{
+  "bytesReceived": 0,
+  "canResume": false,
+  "danger": "safe",
+  "exists": true,
+  "fileSize": 1003614,
+  "filename": "",
+  "finalUrl": "blob:https://chat.zalo.me/d27a595f-c703-4c4a-bfe7-040fa91841f3",
+  "id": 193,
+  "incognito": false,
+  "mime": "image/jpeg",
+  "paused": false,
+  "referrer": "",
+  "startTime": "2025-06-05T13:52:19.609Z",
+  "state": "in_progress",
+  "totalBytes": 1003614,
+  "url": "blob:https://chat.zalo.me/d27a595f-c703-4c4a-bfe7-040fa91841f3"
+}

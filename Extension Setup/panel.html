@@ -271,6 +271,52 @@
       .error-table .message-group {
         margin-bottom: 20px;
       }
+      /* Thêm CSS cho tab tải xuống */
+      .downloads-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+
+      .downloads-table th,
+      .downloads-table td {
+        border: 1px solid #ddd;
+        padding: 8px 12px;
+        text-align: left;
+      }
+
+      .downloads-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+      }
+
+      .downloads-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+
+      .downloads-table tr:hover {
+        background-color: #f1f1f1;
+      }
+
+      .image-names ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .image-names li {
+        margin-bottom: 4px;
+      }
+
+      .no-data-message {
+        padding: 20px;
+        text-align: center;
+        color: #757575;
+        font-style: italic;
+      }
+
+      #exportDownloads {
+        margin-top: 10px;
+      }
     </style>
   </head>
   <body>
@@ -289,9 +335,10 @@
       <div id="status" class="status"></div>
 
       <div class="tabs">
-        <div class="tab active" data-tab="table">Dữ liệu hợp lệ</div>
+        <div class="tab active" data-tab="json">JSON</div>
+        <div class="tab" data-tab="table">Dữ liệu hợp lệ</div>
         <div class="tab" data-tab="error">Dữ liệu lỗi</div>
-        <div class="tab" data-tab="json">JSON</div>
+        <div class="tab" data-tab="downloads">Tải Xuống</div>
       </div>
 
       <div id="tableView" class="tab-content active">
@@ -304,6 +351,15 @@
 
       <div id="jsonView" class="tab-content">
         <div id="result"></div>
+      </div>
+
+      <div id="downloadsView" class="tab-content">
+        <div id="downloadsTable" class="table-container">
+          Chưa có dữ liệu tải xuống.
+        </div>
+        <button id="exportDownloads" class="btn secondary">
+          Xuất Dữ Liệu Tải Xuống
+        </button>
       </div>
     </div>
 

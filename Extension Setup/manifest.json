@@ -1,7 +1,7 @@
 {
-  "name": "Zalo Image Crawler - Chrome",
-  "description": "Zalo Image Crawler with Native Messaging Support",
+  "name": "Zalo Crawler",
   "version": "1.0",
+  "description": "Công cụ crawl dữ liệu từ Zalo Web",
   "manifest_version": 3,
   "action": {
     "default_popup": "panel.html",
@@ -12,15 +12,15 @@
     "storage",
     "activeTab",
     "scripting",
-    "nativeMessaging"
+    "nativeMessaging",
+    "downloads"
   ],
-  "host_permissions": [
-    "nativeMessaging"
-  ],
+  "host_permissions": ["https://chat.zalo.me/*"],
   "externally_connectable": {
     "matches": ["<all_urls>"]
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   }
 }
