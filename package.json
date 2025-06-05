@@ -1,0 +1,31 @@
+{
+  "name": "zalo-crawler-app",
+  "version": "1.0.0",
+  "description": "Zalo Crawler - Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JasonDeee/Zalo-Craw---ChromeExtension.git"
+  },
+  "keywords": [
+    "Crawler",
+    "Zalo",
+    "Electron"
+  ],
+  "author": "Vanced Automation",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^28.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/JasonDeee/Zalo-Craw---ChromeExtension/issues"
+  },
+  "homepage": "https://github.com/JasonDeee/Zalo-Craw---ChromeExtension#readme",
+  "devDependencies": {
+    "electron": "^36.4.0"
+  }
+}
