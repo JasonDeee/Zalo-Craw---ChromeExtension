@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Zalo Crawler</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f5f5f5;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        width: 100%;
+      }
+      h1 {
+        color: #2c3e50;
+        margin-bottom: 2rem;
+      }
+      .btn {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .btn:hover {
+        background-color: #2980b9;
+      }
+      .status {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Zalo Crawler</h1>
+      <button id="getTokenBtn" class="btn">Get Token from Extension</button>
+      <div id="tokenDisplay" class="token-display" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; display: none;">
+        <h3>Token from Extension:</h3>
+        <p id="tokenValue" style="word-break: break-all; font-family: monospace; background: #f1f1f1; padding: 10px; border-radius: 4px;"></p>
+      </div>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+
+      document
+        .getElementById("getTokenBtn")
+        .addEventListener("click", async () => {
+          const tokenDisplay = document.getElementById("tokenDisplay");
+          const tokenValue = document.getElementById("tokenValue");
+          
+          try {
+            // Get the extension ID (replace with your actual extension ID)
+            const extensionId = "aodepfcnhkokkgiohcgfclldcfbcfaoo";
+            
+            // Show loading state
+            tokenValue.textContent = "Đang lấy token từ extension...";
+            tokenDisplay.style.display = "block";
+            
+            // Get the token from the extension
+            const result = await ipcRenderer.invoke(
+              "get-extension-token",
+              extensionId
+            );
+
+            if (result.success) {
+              tokenValue.textContent = result.token;
+              alert(`Đã lấy token từ extension thành công: ${result.token}`);
+            } else {
+              tokenValue.textContent = `Lỗi: ${result.error || 'Không thể lấy token'}`;
+              alert(`Lỗi: ${result.error || 'Không thể lấy token từ extension'}`);
+            }
+          } catch (error) {
+            console.error("Lỗi:", error);
+            tokenValue.textContent = `Lỗi: ${error.message || 'Đã xảy ra lỗi không xác định'}`;
+            tokenDisplay.style.display = "block";
+            alert("Đã xảy ra lỗi khi giao tiếp với extension");
+          }
+        });
+    </script>
+  </body>
+</html>

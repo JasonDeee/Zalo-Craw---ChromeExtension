@@ -1,3 +1,45 @@
+const RandomTokenTest = "meag@bhjkdfsxxxx2";
+
+// Listen for messages from the extension's background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "GET_RANDOM_TOKEN") {
+    // Try to get the token via native messaging
+    const nativeHostName = "com.zalocrawler.host";
+
+    // Try to connect to the native host
+    try {
+      const port = chrome.runtime.connectNative(nativeHostName);
+
+      // Handle messages from the native host
+      port.onMessage.addListener((response) => {
+        if (response && response.token) {
+          sendResponse({ token: response.token });
+        } else {
+          sendResponse({ token: RandomTokenTest }); // Fallback to local token
+        }
+      });
+
+      // Handle disconnect
+      port.onDisconnect.addListener(() => {
+        console.log("Disconnected from native host");
+        // Fallback to local token if native messaging fails
+        sendResponse({ token: RandomTokenTest });
+      });
+
+      // Send the request to the native host
+      port.postMessage({ action: "GET_RANDOM_TOKEN" });
+
+      return true; // Keep the message channel open for async response
+    } catch (error) {
+      console.error("Native host error:", error);
+      // Fallback to local token if native messaging is not available
+      sendResponse({ token: RandomTokenTest });
+      return false;
+    }
+  }
+  return true; // Required for async response
+});
+
 const NewMessageSchema = [
   {
     sender: "Nguyen Van A",

@@ -1,6 +1,6 @@
 {
-  "name": "Zalo Image Crawer - Chrome",
-  "description": "Base Level Extension",
+  "name": "Zalo Image Crawler - Chrome",
+  "description": "Zalo Image Crawler with Native Messaging Support",
   "version": "1.0",
   "manifest_version": 3,
   "action": {
@@ -8,5 +8,19 @@
     "default_icon": "LogoWhite.png"
   },
   "devtools_page": "devtools.html",
-  "permissions": ["storage", "activeTab", "scripting"]
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "nativeMessaging"
+  ],
+  "externally_connectable": {
+    "matches": ["<all_urls>"]
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
 }

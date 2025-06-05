@@ -1,0 +1,10 @@
+{
+  "name": "com.zalocrawler.host",
+  "description": "Native messaging host for Zalo Crawler",
+  "path": "E:\\VS Code\\Zalo-Craw---ChromeExtension\\native-host\\host.js",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://aodepfcnhkokkgiohcgfclldcfbcfaoo/"
+  ]
+}
+
