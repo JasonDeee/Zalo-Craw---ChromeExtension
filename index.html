@@ -2,7 +2,8 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Zalo Image Organizer</title>
+    <title>Zalo Crawler - Desktop Application</title>
+    <link rel="stylesheet" href="Electron_Styles/electron.css" />
     <style>
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -263,6 +264,15 @@
 
         folderList.style.display = "block";
       }
+    </script>
+
+    <!-- Include Welcome Screen Component -->
+    <script src="Component/welcome.js"></script>
+    <script>
+      // Initialize welcome screen when DOM is loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        initWelcomeScreen();
+      });
     </script>
   </body>
 </html>

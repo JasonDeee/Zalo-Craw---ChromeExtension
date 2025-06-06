@@ -8,8 +8,10 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 700,
+    width: 1280,
+    height: 720,
+    frame: false, // Ẩn title bar
+    titleBarStyle: "hidden", // Ẩn title bar trên macOS
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -118,6 +120,23 @@ ipcMain.handle("select-folder", async (event) => {
     console.error("Lỗi khi chọn thư mục:", error);
     return { canceled: true, error: error.message };
   }
+});
+
+// IPC handlers cho window controls
+ipcMain.handle("window-minimize", async (event) => {
+  mainWindow.minimize();
+});
+
+ipcMain.handle("window-maximize", async (event) => {
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow.maximize();
+  }
+});
+
+ipcMain.handle("window-close", async (event) => {
+  mainWindow.close();
 });
 
 // IPC handler để tổ chức hình ảnh

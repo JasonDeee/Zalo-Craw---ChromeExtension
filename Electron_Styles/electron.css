@@ -1,0 +1,437 @@
+.custom-title-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: transparent;
+  z-index: 1000;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  padding: 0 10px;
+  -webkit-app-region: drag;
+}
+
+.window-controls {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.window-control {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: bold;
+  -webkit-transition: all 0.2s ease;
+  transition: all 0.2s ease;
+  color: transparent;
+}
+
+.window-control:hover {
+  color: white;
+  -webkit-transform: scale(1.1);
+  transform: scale(1.1);
+}
+
+.window-control.close {
+  background: #ff5f57;
+}
+
+.window-control.close:hover {
+  background: #ff3b30;
+}
+
+.window-control.minimize {
+  background: #ffbd2e;
+}
+
+.window-control.minimize:hover {
+  background: #ffaa00;
+}
+
+.window-control.maximize {
+  background: #28ca42;
+}
+
+.window-control.maximize:hover {
+  background: #20a934;
+}
+
+/* Title bar for main application */
+.main-title-bar {
+  background: linear-gradient(90deg, #2c3e50, #34495e);
+  border-bottom: 1px solid #1a252f;
+  justify-content: space-between;
+  position: fixed;
+  z-index: 1001;
+}
+
+.app-title {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  padding-left: 15px;
+  -webkit-app-region: drag;
+}
+
+/* Adjust main content to account for title bar */
+.container {
+  margin-top: 40px;
+  padding-top: 20px;
+}
+
+.welcome-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(135deg, #b91372 0%, #5c2a7d 50%, #2d1b47 100%);
+  padding: 2rem;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+      circle at 20% 80%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 40% 40%,
+      rgba(255, 255, 255, 0.05) 0%,
+      transparent 50%
+    );
+  pointer-events: none;
+}
+
+.logo-section {
+  margin-bottom: 3rem;
+  z-index: 1;
+}
+
+.logo-wrapper {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.logo {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(45deg, #ffffff, #f0f0f0);
+  color: #b91372;
+  border-radius: 12px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  -webkit-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.logo-text {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  color: white;
+}
+
+.logo-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+}
+
+.logo-subtitle {
+  font-size: 2.5rem;
+  font-weight: 300;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.version-tag {
+  font-size: 0.9rem;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-left: 0.5rem;
+}
+
+.buttons-section {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  z-index: 1;
+}
+
+.btn {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 2.5rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  min-width: 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: -webkit-gradient(
+    linear,
+    left top,
+    right top,
+    from(transparent),
+    color-stop(rgba(255, 255, 255, 0.2)),
+    to(transparent)
+  );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  -webkit-transition: left 0.6s ease;
+  transition: left 0.6s ease;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn:hover {
+  -webkit-transform: translateY(-2px);
+  transform: translateY(-2px);
+  -webkit-box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+  -webkit-transform: translateY(0);
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, #ff4081, #e91e63);
+  color: white;
+  -webkit-box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
+  box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(45deg, #f50057, #c2185b);
+  -webkit-box-shadow: 0 8px 25px rgba(233, 30, 99, 0.6);
+  box-shadow: 0 8px 25px rgba(233, 30, 99, 0.6);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-icon {
+  font-size: 1.2rem;
+}
+
+.btn-text {
+  font-size: 1.1rem;
+}
+
+.footer-section {
+  text-align: center;
+  color: white;
+  z-index: 1;
+  max-width: 500px;
+}
+
+.footer-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.8;
+  margin-bottom: 2rem;
+}
+
+.footer-text br {
+  line-height: 1.8;
+}
+
+.device-info {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-top: 1rem;
+}
+
+.device-icon {
+  font-size: 1rem;
+}
+
+.device-text {
+  font-weight: 500;
+}
+
+.device-details {
+  font-weight: 300;
+  opacity: 0.8;
+}
+
+.read-only-indicator {
+  background: linear-gradient(45deg, #ff9800, #f57c00);
+  color: white;
+  text-align: center;
+  padding: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  -webkit-box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .welcome-container {
+    padding: 1rem;
+  }
+  .logo-title,
+  .logo-subtitle {
+    font-size: 2rem;
+  }
+  .btn {
+    min-width: 250px;
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+  }
+  .footer-text {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  .btn {
+    min-width: 200px;
+    padding: 0.75rem 1.5rem;
+  }
+}
+/*# sourceMappingURL=electron.css.map */
