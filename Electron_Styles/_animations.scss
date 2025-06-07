@@ -1,0 +1,246 @@
+// Animation System for Component Transitions
+// Provides mounting/unmounting animations with configurable timing
+
+// Animation configuration variables
+:root {
+  --transition-duration: 300ms;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1); // Material Design easing
+  --transition-delay: 50ms;
+
+  // Animation distances
+  --slide-distance: 20px;
+  --scale-factor: 0.95;
+  --blur-amount: 4px;
+}
+
+// Base component animation styles
+.component {
+  // Default state - fully visible and positioned
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  filter: blur(0);
+  transition: opacity var(--transition-duration) var(--transition-timing),
+    transform var(--transition-duration) var(--transition-timing),
+    filter var(--transition-duration) var(--transition-timing);
+
+  // Ensure components take full container space
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  // Mounting animation - component entering
+  &.mounting {
+    opacity: 0;
+    transform: translateX(var(--slide-distance)) scale(var(--scale-factor));
+    filter: blur(var(--blur-amount));
+  }
+
+  // Unmounting animation - component leaving
+  &.unmounting {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--slide-distance)))
+      scale(var(--scale-factor));
+    filter: blur(var(--blur-amount));
+    pointer-events: none; // Prevent interaction during unmount
+  }
+}
+
+// Specific animation variants for different transition types
+
+// Fade transition
+.component.fade-transition {
+  &.mounting {
+    opacity: 0;
+    transform: scale(var(--scale-factor));
+    filter: blur(var(--blur-amount));
+  }
+
+  &.unmounting {
+    opacity: 0;
+    transform: scale(var(--scale-factor));
+    filter: blur(var(--blur-amount));
+  }
+}
+
+// Slide from right
+.component.slide-right-transition {
+  &.mounting {
+    opacity: 0;
+    transform: translateX(100px) scale(var(--scale-factor));
+  }
+
+  &.unmounting {
+    opacity: 0;
+    transform: translateX(-100px) scale(var(--scale-factor));
+  }
+}
+
+// Slide from left
+.component.slide-left-transition {
+  &.mounting {
+    opacity: 0;
+    transform: translateX(-100px) scale(var(--scale-factor));
+  }
+
+  &.unmounting {
+    opacity: 0;
+    transform: translateX(100px) scale(var(--scale-factor));
+  }
+}
+
+// Scale transition
+.component.scale-transition {
+  &.mounting {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  &.unmounting {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+// Vertical slide transition
+.component.slide-up-transition {
+  &.mounting {
+    opacity: 0;
+    transform: translateY(30px) scale(var(--scale-factor));
+  }
+
+  &.unmounting {
+    opacity: 0;
+    transform: translateY(-30px) scale(var(--scale-factor));
+  }
+}
+
+// App container styles
+.CrawlerApp {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden; // Prevent scrollbars during transitions
+
+  // Ensure smooth transitions
+  .component {
+    will-change: opacity, transform, filter;
+    backface-visibility: hidden; // Improve performance
+  }
+}
+
+// Animation speed variants
+.component.fast-transition {
+  --transition-duration: 200ms;
+}
+
+.component.slow-transition {
+  --transition-duration: 500ms;
+}
+
+.component.instant-transition {
+  --transition-duration: 0ms;
+}
+
+// Reduced motion support for accessibility
+@media (prefers-reduced-motion: reduce) {
+  .component {
+    --transition-duration: 0ms;
+    --slide-distance: 0px;
+    --scale-factor: 1;
+    --blur-amount: 0px;
+
+    &.mounting,
+    &.unmounting {
+      transform: none;
+      filter: none;
+    }
+  }
+}
+
+// Loading state animation
+.component.loading {
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
+    z-index: 1000;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+// Error state animation
+.component.error {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+// Success state animation
+.component.success {
+  animation: bounce 0.6s ease-in-out;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+// Utility classes for manual animation control
+.no-transition {
+  transition: none !important;
+}
+
+.force-gpu {
+  transform: translateZ(0); // Force GPU acceleration
+}
+
+// Debug mode - shows transition boundaries
+.debug-transitions {
+  .component {
+    border: 2px solid var(--AccentColor);
+
+    &.mounting {
+      border-color: #4caf50; // Green for mounting
+    }
+
+    &.unmounting {
+      border-color: #f44336; // Red for unmounting
+    }
+  }
+}

@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="Electron_Styles/electron.css" />
     <style>
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         padding: 20px;
         background-color: #f5f5f5;
         max-width: 800px;
@@ -117,162 +116,70 @@
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>Zalo Image Organizer</h1>
+    <div class="CrawlerApp"></div>
 
-      <div class="form-group">
-        <label for="folderPath">Đường dẫn thư mục chứa hình ảnh:</label>
-        <input
-          type="text"
-          id="folderPath"
-          placeholder="Nhập đường dẫn thư mục chứa hình ảnh..."
-        />
-        <button id="browseFolderBtn" class="browse-btn">Chọn thư mục</button>
-      </div>
+    <!-- Core SPA Framework -->
+    <script src="src/core/Component.js"></script>
+    <script src="src/core/Router.js"></script>
+    <script src="src/core/SettingsManager.js"></script>
 
-      <div class="form-group">
-        <label for="jsonData">Dữ liệu JSON (từ extension):</label>
-        <textarea
-          id="jsonData"
-          placeholder='Dán dữ liệu JSON từ extension vào đây. Ví dụ:
-{
-  "clients": [
-    {
-      "text": "Tên khách hàng 1",
-      "image_names": ["image1.jpg", "image2.jpg"]
-    },
-    {
-      "text": "Tên khách hàng 2",
-      "image_names": ["image3.jpg"]
-    }
-  ]
-}'
-        ></textarea>
-      </div>
+    <!-- Real Components -->
+    <script src="src/components/Welcome/Welcome.js"></script>
+    <script src="src/components/DependenceMode/DependenceMode.js"></script>
+    <script src="src/components/Settings/Settings.js"></script>
 
-      <button id="processBtn" class="btn">Xử lý và tổ chức hình ảnh</button>
-
-      <div id="statusMessage" class="status"></div>
-
-      <div id="folderList" class="folder-list" style="display: none">
-        <h3>Danh sách thư mục đã tạo:</h3>
-        <div id="folderItems"></div>
-      </div>
-    </div>
-
+    <!-- Component Integration -->
     <script>
-      const { ipcRenderer } = require("electron");
+      // Rename real components to match router expectations
+      class WelcomeComponent extends Welcome {}
+      class DependenceModeComponent extends DependenceMode {}
+      class SettingsComponent extends Settings {}
 
-      // Chọn thư mục
-      document
-        .getElementById("browseFolderBtn")
-        .addEventListener("click", async () => {
-          try {
-            const result = await ipcRenderer.invoke("select-folder");
-            if (result.canceled) return;
-            document.getElementById("folderPath").value = result.filePaths[0];
-          } catch (error) {
-            showStatus("Lỗi khi chọn thư mục: " + error.message, "error");
-          }
-        });
-
-      // Xử lý khi nhấn nút
-      document
-        .getElementById("processBtn")
-        .addEventListener("click", async () => {
-          const folderPath = document.getElementById("folderPath").value.trim();
-          const jsonData = document.getElementById("jsonData").value.trim();
-
-          if (!folderPath) {
-            return showStatus(
-              "Vui lòng nhập đường dẫn thư mục chứa hình ảnh",
-              "error"
-            );
-          }
-
-          if (!jsonData) {
-            return showStatus("Vui lòng nhập dữ liệu JSON", "error");
-          }
-
-          try {
-            // Parse JSON data
-            const data = JSON.parse(jsonData);
-
-            // Kiểm tra cấu trúc JSON
-            if (!data.clients || !Array.isArray(data.clients)) {
-              return showStatus(
-                'Dữ liệu JSON không đúng định dạng. Cần có mảng "clients".',
-                "error"
-              );
-            }
-
-            // Disable button while processing
-            const processBtn = document.getElementById("processBtn");
-            processBtn.disabled = true;
-            processBtn.textContent = "Đang xử lý...";
-
-            showStatus("Đang xử lý...", "success");
-
-            // Gọi main process để xử lý
-            const result = await ipcRenderer.invoke("organize-images", {
-              folderPath,
-              clients: data.clients,
-            });
-
-            if (result.success) {
-              showStatus(
-                `Đã xử lý thành công! Đã tạo ${result.createdFolders.length} thư mục và di chuyển ${result.movedFiles} file.`,
-                "success"
-              );
-
-              // Hiển thị danh sách thư mục đã tạo
-              displayFolderList(result.createdFolders);
-            } else {
-              showStatus(`Lỗi: ${result.error}`, "error");
-            }
-          } catch (error) {
-            showStatus(`Lỗi khi xử lý: ${error.message}`, "error");
-          } finally {
-            // Re-enable button
-            const processBtn = document.getElementById("processBtn");
-            processBtn.disabled = false;
-            processBtn.textContent = "Xử lý và tổ chức hình ảnh";
-          }
-        });
-
-      // Hiển thị thông báo trạng thái
-      function showStatus(message, type) {
-        const statusElement = document.getElementById("statusMessage");
-        statusElement.textContent = message;
-        statusElement.className = "status " + type;
-        statusElement.style.display = "block";
+      // Placeholder components for routes not yet implemented
+      class PairedModeComponent extends BaseComponent {
+        async mount() {
+          this.element.innerHTML = `
+            <div class="paired-mode-container">
+              <h1>Paired Mode</h1>
+              <p>Connected with Chrome Extension</p>
+              <p>TODO: Implement paired mode functionality</p>
+              <button onclick="router.navigate('/welcome')">Back to Welcome</button>
+            </div>
+          `;
+        }
+        setTemplatePath() {
+          this.templatePath = null;
+        }
+        async loadTemplate() {
+          this.element = document.createElement("div");
+          this.element.className = "paired-mode-component component";
+          return "";
+        }
       }
 
-      // Hiển thị danh sách thư mục đã tạo
-      function displayFolderList(folders) {
-        const folderList = document.getElementById("folderList");
-        const folderItems = document.getElementById("folderItems");
-
-        folderItems.innerHTML = "";
-
-        folders.forEach((folder) => {
-          const folderItem = document.createElement("div");
-          folderItem.className = "folder-item";
-          folderItem.textContent = folder;
-          folderItems.appendChild(folderItem);
-        });
-
-        folderList.style.display = "block";
+      class AboutComponent extends BaseComponent {
+        async mount() {
+          this.element.innerHTML = `
+            <div class="about-container">
+              <h1>About Zalo Crawler</h1>
+              <p>Version: 1.0.0 [Ohio Ver]</p>
+              <p>TODO: Implement about page with app information</p>
+              <button onclick="router.navigate('/welcome')">Back to Welcome</button>
+            </div>
+          `;
+        }
+        setTemplatePath() {
+          this.templatePath = null;
+        }
+        async loadTemplate() {
+          this.element = document.createElement("div");
+          this.element.className = "about-component component";
+          return "";
+        }
       }
     </script>
 
-    <!-- Include Welcome Screen Component -->
-    <script src="Component/welcome.js"></script>
-    <script>
-      // Initialize welcome screen when DOM is loaded
-      document.addEventListener("DOMContentLoaded", function () {
-        initWelcomeScreen();
-      });
-    </script>
+    <!-- Initialize App -->
+    <script src="src/core/App.js"></script>
   </body>
 </html>

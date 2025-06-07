@@ -1,0 +1,169 @@
+<div class="settings-container">
+  <!-- Custom title bar -->
+  <div class="custom-title-bar main-title-bar">
+    <div class="app-title">Zalo Crawler - Cài đặt</div>
+    <div class="window-controls">
+      <button class="window-control minimize">−</button>
+      <button class="window-control maximize">□</button>
+      <button class="window-control close">×</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main-content">
+    <div class="content-wrapper">
+      <!-- Header -->
+      <div class="settings-header">
+        <h1>⚙️ Cài đặt</h1>
+        <p class="settings-subtitle">
+          Tùy chỉnh các thiết lập cho Zalo Crawler
+        </p>
+      </div>
+
+      <!-- Settings Form -->
+      <div class="settings-form">
+        <!-- Default Crawl Location Setting -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <h3 class="setting-title">📁 Default Crawl Location</h3>
+            <p class="setting-description">
+              Thư mục mặc định để lưu trữ hình ảnh đã crawl
+            </p>
+          </div>
+
+          <div class="setting-content">
+            <div class="input-group">
+              <input
+                type="text"
+                id="defaultCrawlLocation"
+                class="setting-input"
+                placeholder="Chọn thư mục mặc định..."
+                readonly
+              />
+              <button id="browseDefaultLocationBtn" class="browse-btn">
+                📂 Chọn thư mục
+              </button>
+            </div>
+            <div class="setting-info">
+              <span class="info-icon">💡</span>
+              <span class="info-text"
+                >Thư mục này sẽ được sử dụng làm mặc định khi tổ chức hình
+                ảnh</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Extension Token Setting -->
+        <div class="setting-group">
+          <div class="setting-header">
+            <h3 class="setting-title">🔑 Extension Token</h3>
+            <p class="setting-description">
+              Token để kết nối với Chrome Extension
+            </p>
+          </div>
+
+          <div class="setting-content">
+            <div class="input-group">
+              <input
+                type="text"
+                id="globalExtensionToken"
+                class="setting-input"
+                placeholder="Nhập Extension Token..."
+                autocomplete="off"
+              />
+              <button id="validateTokenBtn" class="validate-btn">
+                🔍 Kiểm tra
+              </button>
+            </div>
+
+            <div class="token-status-display">
+              <div class="status-indicator-wrapper">
+                <span class="status-indicator"></span>
+                <span class="status-text">Chưa kết nối</span>
+              </div>
+              <div class="token-actions">
+                <button id="clearTokenBtn" class="clear-btn">🗑️ Xóa</button>
+                <button id="generateTokenBtn" class="generate-btn">
+                  🎲 Tạo mới
+                </button>
+              </div>
+            </div>
+
+            <div class="setting-info">
+              <span class="info-icon">💡</span>
+              <span class="info-text"
+                >Token này sẽ được sử dụng để đồng bộ với Chrome Extension</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced Settings -->
+        <div class="setting-group advanced-group">
+          <div class="setting-header">
+            <h3 class="setting-title">🔧 Cài đặt nâng cao</h3>
+            <p class="setting-description">
+              Các tùy chọn nâng cao cho người dùng chuyên nghiệp
+            </p>
+          </div>
+
+          <div class="setting-content">
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  id="autoSaveSettings"
+                  class="setting-checkbox"
+                />
+                <span class="checkbox-custom"></span>
+                <span class="checkbox-text">Tự động lưu cài đặt</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  id="showNotifications"
+                  class="setting-checkbox"
+                />
+                <span class="checkbox-custom"></span>
+                <span class="checkbox-text">Hiển thị thông báo</span>
+              </label>
+
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  id="debugMode"
+                  class="setting-checkbox"
+                />
+                <span class="checkbox-custom"></span>
+                <span class="checkbox-text">Chế độ Debug</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="settings-actions">
+        <button id="resetSettingsBtn" class="action-btn reset-btn">
+          🔄 Khôi phục mặc định
+        </button>
+        <button id="saveSettingsBtn" class="action-btn save-btn">
+          💾 Lưu cài đặt
+        </button>
+      </div>
+
+      <!-- Status Message -->
+      <div id="settingsStatusMessage" class="status-message"></div>
+    </div>
+
+    <!-- Navigation footer -->
+    <div class="navigation-footer">
+      <button class="nav-btn back-btn" id="backToWelcome">
+        ← Quay lại Welcome
+      </button>
+      <button class="nav-btn about-btn" id="openAbout">ℹ️ Giới thiệu</button>
+    </div>
+  </div>
+</div>

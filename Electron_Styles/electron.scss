@@ -1,1 +1,28 @@
+@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap");
+
+:root {
+  --MainColor: var(--text-color, #0c1136);
+  --AccentColor: var(--accent-color, #e72166);
+  --WhiteColor: var(--white-color, #fff);
+
+  --LighterMainColor: var(--lighter-main-color, #7081ff);
+  --DarkerMainColor: var(--darker-main-color, #323441);
+
+  --DarkerAccentColor: var(--darker-accent-color, #9e0e40);
+  --DarkerPlusAccentColor: var(--darker-plus-accent-color, #380114);
+
+  --BlackAlt: var(--black-alt, rgba(0, 0, 0, 0.38));
+  --BlackAltMinus: var(--black-alt-2, rgba(0, 0, 0, 0.62));
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Lexend", sans-serif;
+}
+
+@import "animations";
 @import "welcome";
+@import "dependence-mode";
+@import "settings";
