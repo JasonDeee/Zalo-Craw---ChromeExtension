@@ -3,8 +3,62 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log("Zalo Crawler extension installed");
 });
 
+// Native messaging port
+let nativePort = null;
+
+// Connect to native host
+function connectToNativeHost() {
+  try {
+    nativePort = chrome.runtime.connectNative("com.zalocrawler.host");
+
+    nativePort.onMessage.addListener((message) => {
+      console.log("Received message from native host:", message);
+
+      // Forward message to content script
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs.length > 0) {
+          chrome.tabs.sendMessage(tabs[0].id, {
+            action: "FROM_ELECTRON",
+            data: message,
+          });
+        }
+      });
+    });
+
+    nativePort.onDisconnect.addListener(() => {
+      console.log("Disconnected from native host");
+      nativePort = null;
+    });
+
+    console.log("Connected to native host successfully");
+  } catch (error) {
+    console.error("Failed to connect to native host:", error);
+  }
+}
+
+// Send message to native host
+function sendToNativeHost(message) {
+  if (!nativePort) {
+    connectToNativeHost();
+  }
+
+  if (nativePort) {
+    try {
+      nativePort.postMessage(message);
+      return { success: true };
+    } catch (error) {
+      console.error("Error sending to native host:", error);
+      return { success: false, error: error.message };
+    }
+  } else {
+    return { success: false, error: "Not connected to native host" };
+  }
+}
+
 // Listen for messages from content scripts or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("Background received message:", request);
+
   if (request.action === "GET_RANDOM_TOKEN") {
     // Forward the message to the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -18,6 +72,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true; // Required for async response
   }
+
+  if (request.action === "SEND_TO_ELECTRON") {
+    // Send message to Electron via native messaging
+    const result = sendToNativeHost(request.data);
+    sendResponse(result);
+    return true;
+  }
+
+  return true;
 });
 
 // Lưu trữ tạm thời thông tin tải xuống

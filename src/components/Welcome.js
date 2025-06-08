@@ -1,6 +1,6 @@
 /**
  * Welcome Component - Landing screen with mode selection and token input
- * Handles navigation to different app modes and extension token management
+ * Uses inline template for better performance and maintainability
  */
 class Welcome extends BaseComponent {
   constructor(props = {}) {
@@ -8,12 +8,99 @@ class Welcome extends BaseComponent {
 
     this.state = {
       extensionToken: "",
-      tokenStatus: "disconnected", // 'disconnected', 'connecting', 'connected', 'error'
+      tokenStatus: "disconnected",
       isValidating: false,
     };
 
     // Load saved token from storage
     this.loadSavedToken();
+  }
+
+  /**
+   * Override template loading to use inline HTML
+   */
+  setTemplatePath() {
+    this.templatePath = null; // No external template file
+  }
+
+  async loadTemplate() {
+    // Create element with inline HTML template
+    this.element = document.createElement("div");
+    this.element.className = "welcome-component component";
+    this.element.innerHTML = `<div class="welcome-container">
+  <!-- Logo section -->
+  <header class="logo-section">
+    <div class="logo-wrapper">
+      <div class="logo">
+        <div
+          class="logo-icon"
+          style="
+            background-image: url(./src/Assets/Vx_ZaloCrawler-LogoMark-White.svg);
+          "
+        ></div>
+        <div class="logo-text">
+          <h1 class="logo-title">Zalo<br />Crawler</h1>
+          <span class="version-tag">[Ohio Ver.]</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content section -->
+  <main class="main-content">
+    <!-- Token section -->
+    <div class="token-section">
+      <div class="token-input-wrapper">
+        <label class="token-label">
+          <input
+            type="text"
+            id="extensionToken"
+            class="token-input"
+            placeholder="Nhập Extension Token để kết nối..."
+            autocomplete="off"
+        /></label>
+
+        <button id="pairedModeBtn" class="btn btn-primary light_sweep-effect">
+          <span class="btn-icon"></span>
+          <span class="btn-text">Khởi tạo.</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Buttons section -->
+    <div class="buttons-section">
+      Hoặc tiếp tục với&nbsp;
+      <button id="dependenceModeBtn" class="btn btn-straytext">
+        Chế độ độc lập
+      </button>
+    </div>
+
+    <!-- Footer text -->
+    <p class="footer-text">
+      * Chế độ độc lập: Mọi chức năng hoạt động bình thường.<br />
+      Người dùng cần sao chép JSON thủ công từ Phần mở rộng<br />
+      của Zalo Crawler trong trình duyệt.
+    </p>
+  </main>
+
+  <!-- Footer section -->
+  <footer class="footer-section">
+    <div class="device-info">
+      <!-- Navigation link - Settings only -->
+      <div class="navigation-links">
+        <button id="settingsBtn" class="nav-btn--with-icon settings-btn">
+          <span class="btn-icon"></span>
+          <span class="btn-text">Thiết lập.</span>
+        </button>
+      </div>
+      <div class="line--vertical"></div>
+      <span class="device-details">Desktop MB5430</span>
+    </div>
+  </footer>
+</div>
+`;
+
+    return "";
   }
 
   /**
@@ -39,22 +126,10 @@ class Welcome extends BaseComponent {
    * Bind event listeners
    */
   bindEvents() {
-    // Window control buttons
-    const minimizeBtn = this.$(".window-control.minimize");
-    const maximizeBtn = this.$(".window-control.maximize");
-    const closeBtn = this.$(".window-control.close");
-
-    if (minimizeBtn)
-      this.addEventListener(minimizeBtn, "click", this.minimizeWindow);
-    if (maximizeBtn)
-      this.addEventListener(maximizeBtn, "click", this.maximizeWindow);
-    if (closeBtn) this.addEventListener(closeBtn, "click", this.closeWindow);
-
     // Navigation buttons
     const pairedModeBtn = this.$("#pairedModeBtn");
     const dependenceModeBtn = this.$("#dependenceModeBtn");
     const settingsBtn = this.$("#settingsBtn");
-    const aboutBtn = this.$("#aboutBtn");
 
     if (pairedModeBtn)
       this.addEventListener(pairedModeBtn, "click", this.handlePairedMode);
@@ -66,7 +141,6 @@ class Welcome extends BaseComponent {
       );
     if (settingsBtn)
       this.addEventListener(settingsBtn, "click", this.handleSettings);
-    if (aboutBtn) this.addEventListener(aboutBtn, "click", this.handleAbout);
 
     // Token input events
     const tokenInput = this.$("#extensionToken");
@@ -85,7 +159,9 @@ class Welcome extends BaseComponent {
     this.setState({ extensionToken: token });
 
     // Save to global settings
-    window.settingsManager.set("extensionToken", token);
+    if (window.settingsManager) {
+      window.settingsManager.set("extensionToken", token);
+    }
 
     // Update status
     this.updateTokenStatus();
@@ -123,7 +199,6 @@ class Welcome extends BaseComponent {
       return;
     }
 
-    // TODO: Validate token with extension before navigation
     console.log(
       "Navigating to Paired Mode with token:",
       this.state.extensionToken
@@ -148,44 +223,14 @@ class Welcome extends BaseComponent {
   };
 
   /**
-   * Navigate to About
-   */
-  handleAbout = () => {
-    console.log("Navigating to About");
-    this.navigate("/about");
-  };
-
-  /**
-   * Window control methods
-   */
-  minimizeWindow = () => {
-    if (typeof require !== "undefined") {
-      const { ipcRenderer } = require("electron");
-      ipcRenderer.invoke("window-minimize");
-    }
-  };
-
-  maximizeWindow = () => {
-    if (typeof require !== "undefined") {
-      const { ipcRenderer } = require("electron");
-      ipcRenderer.invoke("window-maximize");
-    }
-  };
-
-  closeWindow = () => {
-    if (typeof require !== "undefined") {
-      const { ipcRenderer } = require("electron");
-      ipcRenderer.invoke("window-close");
-    }
-  };
-
-  /**
    * Load saved token from global settings
    */
   loadSavedToken() {
-    const savedToken = window.settingsManager.get("extensionToken");
-    if (savedToken) {
-      this.setState({ extensionToken: savedToken });
+    if (window.settingsManager) {
+      const savedToken = window.settingsManager.get("extensionToken");
+      if (savedToken) {
+        this.setState({ extensionToken: savedToken });
+      }
     }
   }
 
@@ -246,11 +291,9 @@ class Welcome extends BaseComponent {
     this.updateTokenStatus();
 
     try {
-      // TODO: Implement actual token validation with extension
-      // For now, simulate validation
+      // Simulate validation
       await this.delay(1000);
 
-      // Mock validation logic
       if (this.state.extensionToken.length >= 8) {
         this.setState({ tokenStatus: "connected" });
         console.log("Token validated successfully");
@@ -272,7 +315,6 @@ class Welcome extends BaseComponent {
    * Show token error message
    */
   showTokenError(message) {
-    // Create temporary error message
     const tokenWrapper = this.$(".token-input-wrapper");
     if (!tokenWrapper) return;
 
@@ -301,7 +343,6 @@ class Welcome extends BaseComponent {
    * Handle state changes
    */
   onStateChange(oldState, newState) {
-    // Update UI when state changes
     if (oldState.tokenStatus !== newState.tokenStatus) {
       this.updateTokenStatus();
     }
@@ -319,6 +360,5 @@ class Welcome extends BaseComponent {
    */
   async unmount() {
     console.log("Welcome component unmounted");
-    // Additional cleanup if needed
   }
 }

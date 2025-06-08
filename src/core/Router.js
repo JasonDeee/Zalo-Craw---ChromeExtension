@@ -54,6 +54,12 @@ class Router {
       return;
     }
 
+    // Check if already on this route (avoid duplicate navigation)
+    if (this.currentComponent && this.getCurrentRoute() === path) {
+      console.log(`Already on route: ${path}, skipping navigation`);
+      return;
+    }
+
     const ComponentClass = this.routes.get(path);
     if (!ComponentClass) {
       console.error(`Route not found: ${path}`);
@@ -63,8 +69,10 @@ class Router {
     this.isTransitioning = true;
 
     try {
-      // Update URL hash
-      window.location.hash = path;
+      // Update URL hash only if different
+      if (window.location.hash.slice(1) !== path) {
+        window.location.hash = path;
+      }
 
       // Create new component instance
       const newComponent = new ComponentClass(params);
@@ -109,10 +117,17 @@ class Router {
     // Cleanup old component
     if (this.currentComponent) {
       await this.currentComponent.unmount();
+
+      // Remove old component element from DOM
+      if (currentElement && currentElement.parentNode) {
+        currentElement.parentNode.removeChild(currentElement);
+        console.log("Old component element removed from DOM");
+      }
     }
 
-    // Remove mounting class from new component
+    // Remove mounting class from new component and add mounted class
     newElement.classList.remove("mounting");
+    newElement.classList.add("mounted");
 
     // Call onMount lifecycle
     await newComponent.onMount();
@@ -123,6 +138,13 @@ class Router {
    */
   async handleRouteChange() {
     const hash = window.location.hash.slice(1) || "/welcome"; // Default to welcome
+
+    // Avoid duplicate navigation to same route
+    if (this.currentComponent && this.getCurrentRoute() === hash) {
+      console.log(`Already on route: ${hash}, skipping navigation`);
+      return;
+    }
+
     await this.navigate(hash);
   }
 

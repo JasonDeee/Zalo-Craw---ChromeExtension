@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Simple Debug - Zalo Crawler</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: "Lexend", sans-serif;
+        background: #f0f0f0;
+      }
+      .debug-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .test-section {
+        margin-bottom: 2rem;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .success {
+        background: #d4edda;
+        border-color: #c3e6cb;
+      }
+      .error {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+      }
+      .info {
+        background: #d1ecf1;
+        border-color: #bee5eb;
+      }
+      button {
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        border: none;
+        border-radius: 4px;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .test-app {
+        width: 100%;
+        height: 400px;
+        border: 2px solid #007bff;
+        border-radius: 5px;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+      }
+      .component {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transition: all 0.3s ease;
+      }
+      .component.mounting {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      .component.unmounting {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="debug-container">
+      <h1>🔧 Simple Debug - Zalo Crawler</h1>
+
+      <div class="test-section info">
+        <h3>📋 Step-by-Step Test</h3>
+        <div id="stepResults">Ready to test...</div>
+      </div>
+
+      <div class="test-section">
+        <h3>🧪 Individual Tests</h3>
+        <button onclick="step1()">Step 1: Test Classes</button>
+        <button onclick="step2()">Step 2: Test SettingsManager</button>
+        <button onclick="step3()">Step 3: Test Simple Component</button>
+        <button onclick="step4()">Step 4: Test Router</button>
+        <button onclick="step5()">Step 5: Test Navigation</button>
+      </div>
+
+      <div class="test-section">
+        <h3>🎯 Test Container</h3>
+        <div class="test-app" id="testApp">
+          Click buttons above to test components
+        </div>
+      </div>
+    </div>
+
+    <!-- Load Core Files -->
+    <script src="src/core/Component.js"></script>
+    <script src="src/core/Router.js"></script>
+    <script src="src/core/SettingsManager.js"></script>
+    <script src="src/components/Welcome.js"></script>
+    <script src="src/components/DependenceMode.js"></script>
+    <script src="src/components/Settings.js"></script>
+
+    <script>
+      let testResults = [];
+      let currentStep = 0;
+
+      function updateResults(message, type = "info") {
+        testResults.push(`Step ${currentStep}: ${message}`);
+        const resultDiv = document.getElementById("stepResults");
+        resultDiv.innerHTML = testResults
+          .map((result) => `<div class="${type}">${result}</div>`)
+          .join("");
+      }
+
+      function step1() {
+        currentStep = 1;
+        try {
+          // Test if classes are loaded
+          const checks = [
+            {
+              name: "BaseComponent",
+              exists: typeof BaseComponent !== "undefined",
+            },
+            { name: "Router", exists: typeof Router !== "undefined" },
+            {
+              name: "SettingsManager",
+              exists: typeof SettingsManager !== "undefined",
+            },
+            {
+              name: "window.settingsManager",
+              exists: typeof window.settingsManager !== "undefined",
+            },
+          ];
+
+          const results = checks
+            .map((check) => `${check.name}: ${check.exists ? "✅" : "❌"}`)
+            .join(", ");
+
+          updateResults(`Classes loaded - ${results}`, "success");
+        } catch (error) {
+          updateResults(`Error testing classes: ${error.message}`, "error");
+        }
+      }
+
+      function step2() {
+        currentStep = 2;
+        try {
+          // Test SettingsManager
+          window.settingsManager.set("testKey", "testValue");
+          const value = window.settingsManager.get("testKey");
+          const token = window.settingsManager.generateNewToken();
+
+          updateResults(
+            `SettingsManager working - Set/Get: ${
+              value === "testValue" ? "✅" : "❌"
+            }, Token: ${token ? "✅" : "❌"}`,
+            "success"
+          );
+        } catch (error) {
+          updateResults(`SettingsManager error: ${error.message}`, "error");
+        }
+      }
+
+      function step3() {
+        currentStep = 3;
+        try {
+          // Create a simple test component without template loading
+          class SimpleTestComponent extends BaseComponent {
+            setTemplatePath() {
+              this.templatePath = null; // No template file
+            }
+
+            async loadTemplate() {
+              // Create element manually instead of loading from file
+              this.element = document.createElement("div");
+              this.element.className = "simple-test-component component";
+              this.element.innerHTML = `
+                            <div style="text-align: center; padding: 2rem;">
+                                <h2>✅ Simple Test Component</h2>
+                                <p>This component was created without template file</p>
+                                <p>Time: ${new Date().toLocaleTimeString()}</p>
+                            </div>
+                        `;
+              return "";
+            }
+
+            async mount() {
+              console.log("Simple test component mounted");
+            }
+          }
+
+          const testComponent = new SimpleTestComponent();
+          updateResults(`Simple component created successfully`, "success");
+
+          // Test mounting
+          testComponent.loadTemplate().then(() => {
+            const container = document.getElementById("testApp");
+            container.innerHTML = "";
+            container.appendChild(testComponent.element);
+            testComponent.onMount();
+            updateResults(`Simple component mounted to DOM`, "success");
+          });
+        } catch (error) {
+          updateResults(`Simple component error: ${error.message}`, "error");
+        }
+      }
+
+      function step4() {
+        currentStep = 4;
+        try {
+          // Test Router creation
+          const testRouter = new Router("#testApp");
+
+          // Create simple components for testing
+          class TestWelcome extends BaseComponent {
+            setTemplatePath() {
+              this.templatePath = null;
+            }
+            async loadTemplate() {
+              this.element = document.createElement("div");
+              this.element.className = "test-welcome component";
+              this.element.innerHTML = `
+                            <div style="text-align: center; padding: 2rem;">
+                                <h2>🏠 Test Welcome</h2>
+                                <p>Welcome screen test</p>
+                                <button onclick="testRouter.navigate('/settings')">Go to Settings</button>
+                            </div>
+                        `;
+              return "";
+            }
+          }
+
+          class TestSettings extends BaseComponent {
+            setTemplatePath() {
+              this.templatePath = null;
+            }
+            async loadTemplate() {
+              this.element = document.createElement("div");
+              this.element.className = "test-settings component";
+              this.element.innerHTML = `
+                            <div style="text-align: center; padding: 2rem;">
+                                <h2>⚙️ Test Settings</h2>
+                                <p>Settings screen test</p>
+                                <button onclick="testRouter.navigate('/welcome')">Go to Welcome</button>
+                            </div>
+                        `;
+              return "";
+            }
+          }
+
+          // Register routes
+          testRouter.register("/welcome", TestWelcome);
+          testRouter.register("/settings", TestSettings);
+
+          // Make router globally available for buttons
+          window.testRouter = testRouter;
+
+          updateResults(`Router created and routes registered`, "success");
+        } catch (error) {
+          updateResults(`Router error: ${error.message}`, "error");
+        }
+      }
+
+      function step5() {
+        currentStep = 5;
+        try {
+          if (!window.testRouter) {
+            step4(); // Initialize router first
+            setTimeout(step5, 100); // Retry after initialization
+            return;
+          }
+
+          // Test navigation
+          window.testRouter
+            .navigate("/welcome")
+            .then(() => {
+              updateResults(`Navigation to /welcome successful`, "success");
+            })
+            .catch((error) => {
+              updateResults(`Navigation error: ${error.message}`, "error");
+            });
+        } catch (error) {
+          updateResults(`Navigation test error: ${error.message}`, "error");
+        }
+      }
+
+      // Auto-run step 1 on load
+      document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(step1, 500);
+      });
+    </script>
+  </body>
+</html>

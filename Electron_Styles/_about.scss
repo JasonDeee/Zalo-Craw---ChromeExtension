@@ -1,0 +1,259 @@
+// About Component Styles
+.about-component {
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+
+  .about-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    box-sizing: border-box;
+  }
+
+  .about-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 3rem;
+    position: relative;
+
+    .back-button {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      font-size: 0.9rem;
+      backdrop-filter: blur(10px);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      .icon-arrow-left {
+        &::before {
+          content: "←";
+          font-size: 1.1rem;
+        }
+      }
+    }
+
+    .about-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      color: white;
+      font-size: 2rem;
+      font-weight: 600;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .about-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+
+    .about-info {
+      margin-bottom: 3rem;
+
+      .about-description {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin: 0;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+
+        // Placeholder styling for empty content
+        &:empty::before {
+          content: "Thông tin về ứng dụng sẽ được cập nhật...";
+          opacity: 0.6;
+          font-style: italic;
+        }
+      }
+    }
+
+    .about-version {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+      .version-info {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+
+        .version-label {
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 1rem;
+          font-weight: 500;
+        }
+
+        .version-number {
+          color: white;
+          font-size: 1.2rem;
+          font-weight: 700;
+          background: linear-gradient(45deg, #ffd700, #ffed4e);
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          text-shadow: none;
+        }
+      }
+    }
+  }
+
+  .about-footer {
+    margin-top: auto;
+    padding-top: 2rem;
+    text-align: center;
+
+    // Placeholder styling for empty footer
+    &:empty::before {
+      content: "Các nút chức năng sẽ được thêm...";
+      color: rgba(255, 255, 255, 0.5);
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+  }
+
+  // Error container styling
+  .error-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: white;
+    text-align: center;
+    padding: 2rem;
+
+    h2 {
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+
+    p {
+      margin-bottom: 2rem;
+      opacity: 0.8;
+      line-height: 1.5;
+    }
+
+    button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      padding: 1rem 2rem;
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .about-component {
+    .about-container {
+      padding: 1.5rem;
+    }
+
+    .about-header {
+      margin-bottom: 2rem;
+
+      .about-title {
+        font-size: 1.5rem;
+        position: static;
+        transform: none;
+        margin-top: 1rem;
+      }
+
+      .back-button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+      }
+    }
+
+    .about-content {
+      .about-info {
+        margin-bottom: 2rem;
+
+        .about-description {
+          font-size: 1rem;
+        }
+      }
+
+      .about-version {
+        padding: 1rem 1.5rem;
+
+        .version-info {
+          flex-direction: column;
+          gap: 0.5rem;
+
+          .version-label {
+            font-size: 0.9rem;
+          }
+
+          .version-number {
+            font-size: 1.1rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Animation support
+.about-component {
+  &.mounting {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  &.mounted {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+  }
+
+  &.unmounting {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+  }
+}

@@ -1,0 +1,71 @@
+<div class="welcome-container">
+  <!-- Logo section -->
+  <header class="logo-section">
+    <div class="logo-wrapper">
+      <div class="logo">
+        <div
+          class="logo-icon"
+          style="
+            background-image: url(./src/Assets/Vx_ZaloCrawler-LogoMark-White.svg);
+          "
+        ></div>
+        <div class="logo-text">
+          <h1 class="logo-title">Zalo<br />Crawler</h1>
+          <span class="version-tag">[Ohio Ver.]</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content section -->
+  <main class="main-content">
+    <!-- Token section -->
+    <div class="token-section">
+      <div class="token-input-wrapper">
+        <label class="token-label">
+          <input
+            type="text"
+            id="extensionToken"
+            class="token-input"
+            placeholder="Nhập Extension Token để kết nối..."
+            autocomplete="off"
+        /></label>
+
+        <button id="pairedModeBtn" class="btn btn-primary light_sweep-effect">
+          <span class="btn-icon"></span>
+          <span class="btn-text">Khởi tạo.</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Buttons section -->
+    <div class="buttons-section">
+      Hoặc tiếp tục với&nbsp;
+      <button id="dependenceModeBtn" class="btn btn-straytext">
+        Chế độ độc lập
+      </button>
+    </div>
+
+    <!-- Footer text -->
+    <p class="footer-text">
+      * Chế độ độc lập: Mọi chức năng hoạt động bình thường.<br />
+      Người dùng cần sao chép JSON thủ công từ Phần mở rộng<br />
+      của Zalo Crawler trong trình duyệt.
+    </p>
+  </main>
+
+  <!-- Footer section -->
+  <footer class="footer-section">
+    <div class="device-info">
+      <!-- Navigation link - Settings only -->
+      <div class="navigation-links">
+        <button id="settingsBtn" class="nav-btn--with-icon settings-btn">
+          <span class="btn-icon"></span>
+          <span class="btn-text">Thiết lập.</span>
+        </button>
+      </div>
+      <div class="line--vertical"></div>
+      <span class="device-details">Desktop MB5430</span>
+    </div>
+  </footer>
+</div>

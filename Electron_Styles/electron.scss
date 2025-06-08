@@ -14,15 +14,170 @@
   --BlackAlt: var(--black-alt, rgba(0, 0, 0, 0.38));
   --BlackAltMinus: var(--black-alt-2, rgba(0, 0, 0, 0.62));
 }
+@import "Variables";
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: "Lexend", sans-serif;
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 0%;
+    background-size: 400% 400%;
+  }
+  25% {
+    background-position: 100% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+    background-size: 200% 200%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+    background-size: 400% 400%;
+  }
+}
+
+button,
+input,
+textarea {
+  all: unset;
+}
+
+.CrawlerApp {
+  // Thêm cho tôi padding khi nhỏ hơn 1333px là 48px 64px, lớn hơn là 64px 128px
+  @media screen and (max-width: 1333px) {
+    padding: 48px 64px;
+  }
+  @media screen and (min-width: 1334px) {
+    padding: 64px 128px;
+  }
+
+  background: linear-gradient(
+    -38deg,
+    var(--AccentColor),
+    var(--MainColor),
+    var(--DarkerPlusAccentColor),
+    var(--DarkerAccentColor)
+  );
+  background-size: 200% 200%;
+  animation: gradientBG 15s ease infinite;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -2vh;
+    right: -2vw;
+    width: calc(100vw + 4.2vh);
+    height: 104vh;
+    background-color: var(--BlackAlt);
+    background-image: url(../src/Assets/Vx_ZaloCrawler-LogoMark-FullWhite-Transparent10.svg);
+    background-size: 102vh 102vh;
+    background-repeat: no-repeat;
+    background-position: center right;
+
+    // apply animation to background-position and background-size
+
+    transition: background-position 1.33s cubic-bezier(0.25, 0, 0, 1),
+      background-size 1.33s cubic-bezier(0.25, 0, 0, 1);
+    // z-index: -1;
+  }
+}
+
+.nav-btn--with-icon {
+  display: flex;
+  flex-direction: row;
+  gap: var(--Pixel8);
+
+  align-items: center;
+  justify-content: flex-start;
+
+  cursor: pointer;
+
+  transition: all 0.66s cubic-bezier(0.25, 0, 0, 1);
+
+  &:hover {
+    opacity: 0.5;
+  }
+
+  .btn-icon {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    @media screen and (max-width: 1333px) {
+      width: 24px;
+      height: 24px;
+    }
+
+    @media screen and (min-width: 1334px) {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  .btn-text {
+    font-size: 1.1rem;
+    color: var(--WhiteColor);
+  }
+}
+
+.return-btn {
+  margin-left: calc(-1 * var(--Pixel4));
+  .btn-icon {
+    background-image: url(../src/Assets/arrow-left.svg);
+  }
+}
+
+.settings-btn {
+  .btn-icon {
+    background-image: url(../src/Assets/setting.svg);
+  }
+}
+
+.line {
+  &--vertical {
+    width: 1px;
+    height: 100%;
+    background-color: var(--WhiteColor);
+    opacity: 0.62;
+  }
+}
+
+.btn-primary {
+  color: white;
+  background: var(--AccentColor);
+
+  padding: var(--Pixel8) var(--Pixel16);
+  border-radius: var(--Pixel8);
+}
+
+.light_sweep-effect {
+  overflow: hidden;
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: all 0.66s cubic-bezier(0.25, 0, 0, 1);
+  }
+  &:hover::before {
+    left: 100%;
+  }
 }
 
 @import "animations";
+@import "window-app-navbar";
 @import "welcome";
 @import "dependence-mode";
+@import "paired-mode";
 @import "settings";
+@import "about";

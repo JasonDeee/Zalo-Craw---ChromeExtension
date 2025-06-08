@@ -3,183 +3,132 @@
   <head>
     <meta charset="UTF-8" />
     <title>Zalo Crawler - Desktop Application</title>
-    <link rel="stylesheet" href="Electron_Styles/electron.css" />
     <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Lexend", sans-serif;
+      }
+      /* Reset and base styles for SPA */
       body {
-        padding: 20px;
-        background-color: #f5f5f5;
-        max-width: 800px;
-        margin: 0 auto;
+        overflow: hidden;
       }
+      /* Hide old container */
       .container {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
+        display: none !important;
       }
-      h1 {
-        color: #2c3e50;
-        margin-bottom: 1.5rem;
-        text-align: center;
-      }
-      .form-group {
-        margin-bottom: 1.5rem;
-      }
-      label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-      }
-      input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        font-size: 16px;
-        box-sizing: border-box;
-      }
-      textarea {
-        width: 100%;
-        min-height: 200px;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        font-size: 14px;
-        font-family: monospace;
-        resize: vertical;
-        box-sizing: border-box;
-      }
-      .btn {
-        background-color: #3498db;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        font-size: 16px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-        width: 100%;
-      }
-      .btn:hover {
-        background-color: #2980b9;
-      }
-      .btn:disabled {
-        background-color: #95a5a6;
-        cursor: not-allowed;
-      }
-      .status {
-        margin-top: 20px;
-        padding: 15px;
-        border-radius: 5px;
-        display: none;
-      }
-      .success {
-        background-color: #d4edda;
-        color: #155724;
-        display: block;
-      }
-      .error {
-        background-color: #f8d7da;
-        color: #721c24;
-        display: block;
-      }
-      .folder-list {
-        margin-top: 20px;
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        padding: 10px;
-        background-color: #f8f9fa;
-      }
-      .folder-item {
-        padding: 5px;
-        border-bottom: 1px solid #eee;
-      }
-      .folder-item:last-child {
-        border-bottom: none;
-      }
-      .browse-btn {
-        background-color: #6c757d;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        font-size: 14px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-        margin-top: 10px;
-      }
-      .browse-btn:hover {
-        background-color: #5a6268;
+      /* Ensure CrawlerApp takes full viewport */
+      .CrawlerApp {
+        width: 100vw;
+        position: relative;
+        overflow: hidden;
+        height: 100vh;
       }
     </style>
+    <link rel="stylesheet" href="Electron_Styles/electron.css" />
   </head>
   <body>
+    <nav class="window-app-navbar">
+      <div class="right-top-bar">
+        <button
+          id="MinimizeButton"
+          style="background-image: url(./src/Assets/Minimize_White_24px.svg)"
+        ></button>
+        <button
+          id="FullScreenButton"
+          style="background-image: url(./src/Assets/Fullscreen_White_24px.svg)"
+        ></button>
+        <button
+          id="CloseButton"
+          style="background-image: url(./src/Assets/Close_White_24px.svg)"
+        ></button>
+      </div>
+    </nav>
     <div class="CrawlerApp"></div>
 
     <!-- Core SPA Framework -->
     <script src="src/core/Component.js"></script>
     <script src="src/core/Router.js"></script>
     <script src="src/core/SettingsManager.js"></script>
+    <script src="src/core/WindowControls.js"></script>
 
     <!-- Real Components -->
-    <script src="src/components/Welcome/Welcome.js"></script>
-    <script src="src/components/DependenceMode/DependenceMode.js"></script>
-    <script src="src/components/Settings/Settings.js"></script>
+    <script src="src/components/Welcome.js"></script>
+    <script src="src/components/DependenceMode.js"></script>
+    <script src="src/components/PairedMode.js"></script>
+    <script src="src/components/Settings.js"></script>
+    <script src="src/components/About.js"></script>
 
     <!-- Component Integration -->
     <script>
       // Rename real components to match router expectations
       class WelcomeComponent extends Welcome {}
       class DependenceModeComponent extends DependenceMode {}
+      class PairedModeComponent extends PairedMode {}
       class SettingsComponent extends Settings {}
-
-      // Placeholder components for routes not yet implemented
-      class PairedModeComponent extends BaseComponent {
-        async mount() {
-          this.element.innerHTML = `
-            <div class="paired-mode-container">
-              <h1>Paired Mode</h1>
-              <p>Connected with Chrome Extension</p>
-              <p>TODO: Implement paired mode functionality</p>
-              <button onclick="router.navigate('/welcome')">Back to Welcome</button>
-            </div>
-          `;
-        }
-        setTemplatePath() {
-          this.templatePath = null;
-        }
-        async loadTemplate() {
-          this.element = document.createElement("div");
-          this.element.className = "paired-mode-component component";
-          return "";
-        }
-      }
-
-      class AboutComponent extends BaseComponent {
-        async mount() {
-          this.element.innerHTML = `
-            <div class="about-container">
-              <h1>About Zalo Crawler</h1>
-              <p>Version: 1.0.0 [Ohio Ver]</p>
-              <p>TODO: Implement about page with app information</p>
-              <button onclick="router.navigate('/welcome')">Back to Welcome</button>
-            </div>
-          `;
-        }
-        setTemplatePath() {
-          this.templatePath = null;
-        }
-        async loadTemplate() {
-          this.element = document.createElement("div");
-          this.element.className = "about-component component";
-          return "";
-        }
-      }
+      class AboutComponent extends About {}
     </script>
 
     <!-- Initialize App -->
     <script src="src/core/App.js"></script>
+
+    <!-- Start Application -->
+    <script>
+      // Initialize and start the application
+      document.addEventListener("DOMContentLoaded", async () => {
+        try {
+          console.log("DOM loaded, initializing app...");
+
+          // Create and initialize app instance
+          const app = new App();
+          window.app = app; // Make globally available for debugging
+
+          // Initialize the app
+          await app.init();
+
+          console.log("App initialization complete");
+        } catch (error) {
+          console.error("Failed to initialize app:", error);
+
+          // Show fallback error message
+          const appContainer = document.querySelector(".CrawlerApp");
+          if (appContainer) {
+            appContainer.innerHTML = `
+              <div style="
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                font-family: 'Lexend', sans-serif;
+                text-align: center;
+                padding: 2rem;
+              ">
+                <h1>⚠️ Lỗi khởi tạo ứng dụng</h1>
+                <p>Không thể khởi tạo Zalo Crawler. Vui lòng thử lại.</p>
+                <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 1rem;">
+                  Error: ${error.message}
+                </p>
+                <button onclick="location.reload()" style="
+                  margin-top: 2rem;
+                  padding: 1rem 2rem;
+                  background: rgba(255,255,255,0.2);
+                  border: 1px solid rgba(255,255,255,0.3);
+                  border-radius: 8px;
+                  color: white;
+                  cursor: pointer;
+                  font-family: inherit;
+                ">
+                  🔄 Tải lại ứng dụng
+                </button>
+              </div>
+            `;
+          }
+        }
+      });
+    </script>
   </body>
 </html>

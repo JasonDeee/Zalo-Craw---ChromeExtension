@@ -5,6 +5,7 @@
 class App {
   constructor() {
     this.router = null;
+    this.windowControls = null;
     this.isInitialized = false;
     this.components = new Map();
 
@@ -30,6 +31,9 @@ class App {
 
       // Initialize router
       this.initRouter();
+
+      // Initialize window controls
+      this.initWindowControls();
 
       // Register all routes
       this.registerRoutes();
@@ -82,6 +86,18 @@ class App {
   }
 
   /**
+   * Initialize window controls
+   */
+  initWindowControls() {
+    this.windowControls = new WindowControls();
+
+    // Make window controls globally available
+    window.windowControls = this.windowControls;
+
+    console.log("Window controls initialized");
+  }
+
+  /**
    * Register all application routes
    */
   registerRoutes() {
@@ -128,21 +144,13 @@ class App {
    * Determine the initial route based on app state
    */
   getInitialRoute() {
-    // Check if this is first run
-    const isFirstRun = !localStorage.getItem("zalo-crawler-initialized");
+    // Always start with Welcome screen for consistent user experience
+    // This ensures users always see the main landing page first
+    console.log("Setting initial route to Welcome");
 
-    if (isFirstRun) {
-      localStorage.setItem("zalo-crawler-initialized", "true");
-      return "/welcome";
-    }
+    // Mark app as initialized
+    localStorage.setItem("zalo-crawler-initialized", "true");
 
-    // Check for saved route
-    const savedRoute = localStorage.getItem("zalo-crawler-last-route");
-    if (savedRoute && this.router.routes.has(savedRoute)) {
-      return savedRoute;
-    }
-
-    // Default to welcome
     return "/welcome";
   }
 
@@ -294,35 +302,30 @@ class App {
       this.router.currentComponent.destroy();
     }
 
+    // Cleanup window controls
+    if (this.windowControls) {
+      this.windowControls.destroy();
+    }
+
     // Clear global references
     window.router = null;
+    window.windowControls = null;
 
     // Reset state
     this.isInitialized = false;
     this.router = null;
+    this.windowControls = null;
     this.components.clear();
 
     console.log("Application destroyed");
   }
 }
 
-// Create global app instance
-const app = new App();
-
 // Export for use in other modules
 if (typeof module !== "undefined" && module.exports) {
   module.exports = App;
 } else {
   window.App = App;
-  window.app = app;
 }
 
-// Auto-initialize when script loads
-if (typeof window !== "undefined") {
-  // Initialize app when DOM is ready
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => app.init());
-  } else {
-    app.init();
-  }
-}
+// Note: App initialization is handled in index.html to avoid double initialization

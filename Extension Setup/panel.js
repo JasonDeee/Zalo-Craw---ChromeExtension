@@ -69,6 +69,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const checkDataButton = document.getElementById("checkData");
   const convertDataButton = document.getElementById("convertData");
   const getAllImagesButton = document.getElementById("getAllImages");
+  const testElectronButton = document.getElementById("testElectron");
   const messageTableElement = document.getElementById("messageTable");
   const errorMessageTableElement = document.getElementById("errorMessageTable");
   const downloadsTableElement = document.getElementById("downloadsTable");
@@ -384,6 +385,80 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Gửi lệnh tải hình ảnh đến trang web Zalo
     downloadAllImages(convertedDataSchema.clients);
+  });
+
+  // Sự kiện click nút Test Electron
+  testElectronButton.addEventListener("click", function () {
+    const originalText = testElectronButton.textContent;
+
+    // Cập nhật trạng thái nút
+    testElectronButton.textContent = "📤 Đang gửi...";
+    testElectronButton.className = "sending";
+    testElectronButton.disabled = true;
+
+    // Tạo tin nhắn test
+    const testMessage = {
+      action: "TEST_FROM_PANEL",
+      timestamp: Date.now(),
+      source: "extension_panel",
+      message: "Test tin nhắn từ Extension Panel! 🎯",
+      data: {
+        panelInfo: "Zalo Crawler Extension Panel",
+        testId: Math.floor(Math.random() * 10000),
+        currentTab:
+          document.querySelector(".tab.active")?.getAttribute("data-tab") ||
+          "unknown",
+      },
+    };
+
+    console.log("Sending test message to Electron:", testMessage);
+
+    // Hiển thị thông báo
+    statusElement.style.display = "block";
+    statusElement.textContent = "Đang gửi tin nhắn test đến Electron App...";
+    statusElement.style.backgroundColor = "#e3f2fd";
+    statusElement.style.color = "#1976d2";
+
+    // Gửi tin nhắn qua background script
+    chrome.runtime.sendMessage(
+      {
+        action: "SEND_TO_ELECTRON",
+        data: testMessage,
+      },
+      (response) => {
+        console.log("Response from background script:", response);
+
+        // Reset nút sau 1 giây
+        setTimeout(() => {
+          testElectronButton.disabled = false;
+
+          if (response && response.success) {
+            testElectronButton.textContent = "✅ Đã gửi!";
+            testElectronButton.className = "success";
+
+            statusElement.textContent =
+              "Tin nhắn test đã được gửi thành công đến Electron App!";
+            statusElement.style.backgroundColor = "#e8f5e9";
+            statusElement.style.color = "#388e3c";
+          } else {
+            testElectronButton.textContent = "❌ Lỗi!";
+            testElectronButton.className = "error";
+
+            statusElement.textContent =
+              "Không thể gửi tin nhắn đến Electron App. Kiểm tra kết nối.";
+            statusElement.style.backgroundColor = "#ffebee";
+            statusElement.style.color = "#d32f2f";
+          }
+
+          // Reset nút về trạng thái ban đầu sau 3 giây
+          setTimeout(() => {
+            testElectronButton.textContent = originalText;
+            testElectronButton.className = "";
+            statusElement.style.display = "none";
+          }, 3000);
+        }, 1000);
+      }
+    );
   });
 
   // Hàm tải tất cả hình ảnh từ dữ liệu khách hàng
@@ -1323,8 +1398,9 @@ document.addEventListener("DOMContentLoaded", function () {
     downloadsTableElement.appendChild(table);
   }
 
-  // Lắng nghe sự kiện tải xuống từ background script
+  // Lắng nghe sự kiện từ background script
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    // Handle download messages
     if (
       message.action === "DOWNLOAD_CREATED" ||
       message.action === "DOWNLOAD_COMPLETED"
@@ -1404,7 +1480,28 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       sendResponse({ success: true });
+      return true;
     }
+
+    // Handle native messaging responses
+    if (message.action === "FROM_ELECTRON") {
+      console.log(
+        "Received message from Electron via native messaging:",
+        message.data
+      );
+
+      // Add to native log if native tab is active
+      const activeTab = document.querySelector(".tab.active");
+      if (activeTab && activeTab.getAttribute("data-tab") === "native") {
+        addNativeLogEntry("received", "From Electron", message.data);
+        nativeMessageCount.received++;
+        updateNativeStatus();
+      }
+
+      sendResponse({ success: true, received: true });
+      return true;
+    }
+
     return true;
   });
 
@@ -1465,7 +1562,160 @@ document.addEventListener("DOMContentLoaded", function () {
       } else if (tabId === "downloads") {
         // Hiển thị dữ liệu tải xuống
         displayDownloadsData();
+      } else if (tabId === "native") {
+        // Khởi tạo Native Messaging tab
+        initNativeMessagingTab();
       }
     });
   });
+
+  // Native Messaging functionality
+  let nativeMessageCount = { sent: 0, received: 0 };
+  let nativeConnectionStatus = "Chưa kiểm tra";
+
+  function initNativeMessagingTab() {
+    // Cập nhật status display
+    updateNativeStatus();
+
+    // Bind event listeners cho native messaging controls
+    const testConnectionBtn = document.getElementById("testConnection");
+    const clearLogBtn = document.getElementById("clearNativeLog");
+
+    if (testConnectionBtn && !testConnectionBtn.hasAttribute("data-bound")) {
+      testConnectionBtn.setAttribute("data-bound", "true");
+      testConnectionBtn.addEventListener("click", testNativeConnection);
+    }
+
+    if (clearLogBtn && !clearLogBtn.hasAttribute("data-bound")) {
+      clearLogBtn.setAttribute("data-bound", "true");
+      clearLogBtn.addEventListener("click", clearNativeLog);
+    }
+  }
+
+  function updateNativeStatus() {
+    const connectionStatusEl = document.getElementById("connectionStatus");
+    const messagesSentEl = document.getElementById("messagesSent");
+    const messagesReceivedEl = document.getElementById("messagesReceived");
+
+    if (connectionStatusEl) {
+      connectionStatusEl.textContent = nativeConnectionStatus;
+      connectionStatusEl.className = "status-value";
+
+      if (nativeConnectionStatus.includes("Kết nối thành công")) {
+        connectionStatusEl.style.background = "#e8f5e9";
+        connectionStatusEl.style.color = "#388e3c";
+      } else if (nativeConnectionStatus.includes("Lỗi")) {
+        connectionStatusEl.style.background = "#ffebee";
+        connectionStatusEl.style.color = "#d32f2f";
+      } else {
+        connectionStatusEl.style.background = "#e3f2fd";
+        connectionStatusEl.style.color = "#1976d2";
+      }
+    }
+
+    if (messagesSentEl) {
+      messagesSentEl.textContent = nativeMessageCount.sent;
+    }
+
+    if (messagesReceivedEl) {
+      messagesReceivedEl.textContent = nativeMessageCount.received;
+    }
+  }
+
+  function testNativeConnection() {
+    const testBtn = document.getElementById("testConnection");
+    const originalText = testBtn.textContent;
+
+    testBtn.textContent = "Đang test...";
+    testBtn.disabled = true;
+    nativeConnectionStatus = "Đang kiểm tra...";
+    updateNativeStatus();
+
+    const testMessage = {
+      action: "TEST_NATIVE_CONNECTION",
+      timestamp: Date.now(),
+      source: "extension_panel_native_tab",
+      message: "Test kết nối Native Messaging từ Panel! 🔧",
+      data: {
+        testType: "native_messaging_test",
+        panelTab: "native",
+        testId: Math.floor(Math.random() * 10000),
+      },
+    };
+
+    addNativeLogEntry("sent", "Test Connection", testMessage);
+    nativeMessageCount.sent++;
+
+    chrome.runtime.sendMessage(
+      {
+        action: "SEND_TO_ELECTRON",
+        data: testMessage,
+      },
+      (response) => {
+        setTimeout(() => {
+          testBtn.disabled = false;
+          testBtn.textContent = originalText;
+
+          if (response && response.success) {
+            nativeConnectionStatus = "Kết nối thành công ✅";
+            addNativeLogEntry("received", "Connection Success", response);
+            nativeMessageCount.received++;
+          } else {
+            nativeConnectionStatus = "Lỗi kết nối ❌";
+            addNativeLogEntry(
+              "error",
+              "Connection Failed",
+              response || { error: "No response" }
+            );
+          }
+
+          updateNativeStatus();
+        }, 1000);
+      }
+    );
+  }
+
+  function clearNativeLog() {
+    const logContainer = document.getElementById("nativeMessageLog");
+    if (logContainer) {
+      logContainer.innerHTML =
+        '<p class="log-empty">Chưa có tin nhắn nào...</p>';
+    }
+
+    // Reset counters
+    nativeMessageCount = { sent: 0, received: 0 };
+    nativeConnectionStatus = "Đã xóa log";
+    updateNativeStatus();
+
+    setTimeout(() => {
+      nativeConnectionStatus = "Chưa kiểm tra";
+      updateNativeStatus();
+    }, 2000);
+  }
+
+  function addNativeLogEntry(type, title, data) {
+    const logContainer = document.getElementById("nativeMessageLog");
+    if (!logContainer) return;
+
+    // Remove empty message if exists
+    const emptyMsg = logContainer.querySelector(".log-empty");
+    if (emptyMsg) {
+      emptyMsg.remove();
+    }
+
+    const entry = document.createElement("div");
+    entry.className = `log-entry ${type}`;
+
+    const timestamp = new Date().toLocaleTimeString();
+    const content =
+      typeof data === "object" ? JSON.stringify(data, null, 2) : data;
+
+    entry.innerHTML = `
+      <div class="log-timestamp">[${timestamp}] ${title}</div>
+      <div class="log-content">${content}</div>
+    `;
+
+    logContainer.appendChild(entry);
+    logContainer.scrollTop = logContainer.scrollHeight;
+  }
 });

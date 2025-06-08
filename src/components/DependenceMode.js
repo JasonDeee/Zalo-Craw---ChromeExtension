@@ -1,6 +1,6 @@
 /**
  * DependenceMode Component - Standalone image organization mode
- * Migrated from main.js functionality for organizing images from JSON data
+ * Uses inline template with embedded HTML for better performance
  */
 class DependenceMode extends BaseComponent {
   constructor(props = {}) {
@@ -15,6 +15,103 @@ class DependenceMode extends BaseComponent {
 
     // Load saved data
     this.loadSavedData();
+  }
+
+  /**
+   * Override template loading to use inline HTML
+   */
+  setTemplatePath() {
+    this.templatePath = null; // No external template file
+  }
+
+  async loadTemplate() {
+    // Create element with inline HTML template
+    this.element = document.createElement("div");
+    this.element.className = "dependence-mode-component component";
+    this.element.innerHTML = `<div class="dependence-mode-container">
+  <style>
+    .CrawlerApp::before {
+      background-position: bottom right;
+    }
+    @media screen and (max-width: 1333px) {
+      .CrawlerApp::before {
+        background-size: calc(100vh - 160px) calc(100vh - 160px);
+      }
+    }
+    @media screen and (min-width: 1334px) {
+      .CrawlerApp::before {
+        background-size: calc(100vh - 128px) calc(100vh - 128px);
+      }
+    }
+  </style>
+  <!-- Main content -->
+  <div class="main-content">
+    <header class="main-header">
+      <button class="nav-btn--with-icon return-btn" id="backToWelcome">
+        <span class="btn-icon"></span>
+        <span class="btn-text">Quay lại.</span>
+      </button>
+      <h1>Chế độ độc lập.<span>[StandAlone.]</span></h1>
+    </header>
+    <main class="content-wrapper">
+      <div class="form-group" id="jsonDataGroup">
+        <label for="jsonData">Dữ liệu JSON đầu vào.</label>
+        <textarea
+          id="jsonData"
+          placeholder='Dán dữ liệu JSON từ extension vào đây.
+          Ví dụ:
+{
+  "clients": [
+    {
+      "text": "Tên khách hàng 1",
+      "image_names": ["image1.jpg", "image2.jpg"]
+    },
+    {
+      "text": "Tên khách hàng 2", 
+      "image_names": ["image3.jpg"]
+    }
+  ]
+}'
+        ></textarea>
+        <div class="btn-group">
+          <button id="processBtn" class="btn btn-primary light_sweep-effect">
+            <span class="btn-icon"></span>
+            <span class="btn-text">Chuyển đổi</span>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="folderPath"
+          ><input type="text" id="folderPath" placeholder="Nhập đường dẫn..." />
+          <button id="browseFolderBtn" class="browse-btn btn btn-straytext">
+            Chọn thư mục
+          </button></label
+        >
+      </div>
+
+      <div id="statusMessage" class="status"></div>
+
+      <div id="folderList" class="folder-list" style="display: none">
+        <h3>Danh sách thư mục đã tạo:</h3>
+        <div id="folderItems"></div>
+      </div>
+    </main>
+
+    <!-- Navigation footer -->
+    <footer class="navigation-footer">
+      <button
+        class="nav-btn settings-btn"
+        id="openSettings"
+        style="display: none"
+      >
+        ⚙️ Cài đặt
+      </button>
+    </footer>
+  </div>
+</div>
+`;
+
+    return "";
   }
 
   /**
@@ -37,17 +134,6 @@ class DependenceMode extends BaseComponent {
    * Bind event listeners
    */
   bindEvents() {
-    // Window control buttons
-    const minimizeBtn = this.$(".window-control.minimize");
-    const maximizeBtn = this.$(".window-control.maximize");
-    const closeBtn = this.$(".window-control.close");
-
-    if (minimizeBtn)
-      this.addEventListener(minimizeBtn, "click", this.minimizeWindow);
-    if (maximizeBtn)
-      this.addEventListener(maximizeBtn, "click", this.maximizeWindow);
-    if (closeBtn) this.addEventListener(closeBtn, "click", this.closeWindow);
-
     // Form elements
     const browseFolderBtn = this.$("#browseFolderBtn");
     const processBtn = this.$("#processBtn");
@@ -86,37 +172,12 @@ class DependenceMode extends BaseComponent {
   }
 
   /**
-   * Window control methods
-   */
-  minimizeWindow = () => {
-    if (typeof require !== "undefined") {
-      const { ipcRenderer } = require("electron");
-      ipcRenderer.invoke("window-minimize");
-    }
-  };
-
-  maximizeWindow = () => {
-    if (typeof require !== "undefined") {
-      const { ipcRenderer } = require("electron");
-      ipcRenderer.invoke("window-maximize");
-    }
-  };
-
-  closeWindow = () => {
-    if (typeof require !== "undefined") {
-      const { ipcRenderer } = require("electron");
-      ipcRenderer.invoke("window-close");
-    }
-  };
-
-  /**
    * Handle browse folder button click
    */
   handleBrowseFolder = async () => {
     try {
-      if (typeof require !== "undefined") {
-        const { ipcRenderer } = require("electron");
-        const result = await ipcRenderer.invoke("select-folder");
+      if (window.electronAPI && window.electronAPI.selectFolder) {
+        const result = await window.electronAPI.selectFolder();
 
         if (
           !result.canceled &&
@@ -134,6 +195,8 @@ class DependenceMode extends BaseComponent {
           // Save to localStorage
           localStorage.setItem("zalo-crawler-last-folder", folderPath);
         }
+      } else {
+        this.showStatus("Electron API không khả dụng", "error");
       }
     } catch (error) {
       this.showStatus("Lỗi khi chọn thư mục: " + error.message, "error");
@@ -199,9 +262,8 @@ class DependenceMode extends BaseComponent {
       this.showStatus("Đang xử lý...", "success");
 
       // Call main process to organize images
-      if (typeof require !== "undefined") {
-        const { ipcRenderer } = require("electron");
-        const result = await ipcRenderer.invoke("organize-images", {
+      if (window.electronAPI && window.electronAPI.organizeImages) {
+        const result = await window.electronAPI.organizeImages({
           folderPath,
           clients: data.clients,
         });
@@ -218,6 +280,8 @@ class DependenceMode extends BaseComponent {
         } else {
           this.showStatus(`Lỗi: ${result.error}`, "error");
         }
+      } else {
+        this.showStatus("Electron API không khả dụng", "error");
       }
     } catch (error) {
       this.showStatus(`Lỗi khi xử lý: ${error.message}`, "error");
@@ -292,11 +356,13 @@ class DependenceMode extends BaseComponent {
    */
   loadDefaultCrawlLocation() {
     try {
-      const defaultLocation = window.settingsManager.get(
-        "defaultCrawlLocation"
-      );
-      if (defaultLocation && !this.state.folderPath) {
-        this.setState({ folderPath: defaultLocation });
+      if (window.settingsManager) {
+        const defaultLocation = window.settingsManager.get(
+          "defaultCrawlLocation"
+        );
+        if (defaultLocation && !this.state.folderPath) {
+          this.setState({ folderPath: defaultLocation });
+        }
       }
     } catch (error) {
       console.error("Error loading default crawl location:", error);
@@ -358,6 +424,5 @@ class DependenceMode extends BaseComponent {
    */
   async unmount() {
     console.log("DependenceMode component unmounted");
-    // Additional cleanup if needed
   }
 }
