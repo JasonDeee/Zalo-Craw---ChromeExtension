@@ -59,8 +59,8 @@ class WindowControls {
   handleMinimize() {
     console.log("Minimize button clicked");
 
-    if (window.electronAPI && window.electronAPI.minimize) {
-      window.electronAPI.minimize();
+    if (window.electronAPI && window.electronAPI.minimizeWindow) {
+      window.electronAPI.minimizeWindow();
     } else {
       console.error("Electron API không khả dụng");
     }
@@ -72,8 +72,8 @@ class WindowControls {
   handleMaximize() {
     console.log("Maximize/Restore button clicked");
 
-    if (window.electronAPI && window.electronAPI.maximize) {
-      window.electronAPI.maximize();
+    if (window.electronAPI && window.electronAPI.maximizeWindow) {
+      window.electronAPI.maximizeWindow();
     } else {
       console.error("Electron API không khả dụng");
     }
@@ -85,8 +85,8 @@ class WindowControls {
   handleClose() {
     console.log("Close button clicked");
 
-    if (window.electronAPI && window.electronAPI.close) {
-      window.electronAPI.close();
+    if (window.electronAPI && window.electronAPI.closeWindow) {
+      window.electronAPI.closeWindow();
     } else {
       console.error("Electron API không khả dụng");
     }

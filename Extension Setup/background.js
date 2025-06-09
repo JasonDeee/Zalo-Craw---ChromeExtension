@@ -80,6 +80,49 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === "COPY_TO_CLIPBOARD") {
+    // Handle clipboard copy using chrome.action API
+    try {
+      // Create offscreen document to handle clipboard operations
+      chrome.offscreen
+        .createDocument({
+          url: "offscreen.html",
+          reasons: ["CLIPBOARD"],
+          justification: "Copy text to clipboard",
+        })
+        .then(() => {
+          chrome.runtime.sendMessage({
+            action: "OFFSCREEN_COPY",
+            text: request.text,
+          });
+          sendResponse({ success: true });
+        })
+        .catch((error) => {
+          console.log("Offscreen method failed, trying direct method");
+          // Fallback: try direct write (may not work in all contexts)
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard
+              .writeText(request.text)
+              .then(() => {
+                sendResponse({ success: true });
+              })
+              .catch((err) => {
+                sendResponse({ success: false, error: err.message });
+              });
+          } else {
+            sendResponse({
+              success: false,
+              error: "Clipboard API not available",
+            });
+          }
+        });
+      return true;
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+      return true;
+    }
+  }
+
   return true;
 });
 

@@ -61,6 +61,9 @@ const DownloadedImageSchema = {
   clients: [],
 };
 
+// Biến để lưu trữ dữ liệu hiện đang được hiển thị trong tab JSON
+let currentDisplayedJsonData = null;
+
 document.addEventListener("DOMContentLoaded", function () {
   const startCrawlButton = document.getElementById("startCrawl");
   const resultElement = document.getElementById("result");
@@ -260,48 +263,145 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Sự kiện click nút sao chép dữ liệu
-  copyDataButton.addEventListener("click", function () {
-    // Kiểm tra tab nào đang được hiển thị để quyết định sao chép dữ liệu nào
-    const activeTab = document
-      .querySelector(".tab.active")
-      .getAttribute("data-tab");
-    let dataToExport;
+  // Hàm copy dữ liệu với fallback methods
+  async function copyToClipboard(text) {
+    try {
+      // Method 1: Thử Chrome extension API
+      if (chrome && chrome.runtime && chrome.runtime.getURL) {
+        await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage(
+            {
+              action: "COPY_TO_CLIPBOARD",
+              text: text,
+            },
+            (response) => {
+              if (response && response.success) {
+                resolve();
+              } else {
+                reject(new Error("Chrome API failed"));
+              }
+            }
+          );
+        });
+        return "chrome_api";
+      }
+    } catch (error) {
+      console.log("Chrome API method failed:", error);
+    }
 
-    if (activeTab === "table") {
-      // Nếu đang ở tab dữ liệu hợp lệ
-      // Kiểm tra xem đã chuyển đổi dữ liệu chưa
-      if (convertedDataSchema.clients.length > 0) {
-        dataToExport = convertedDataSchema;
+    try {
+      // Method 2: Thử Clipboard API (nếu có permission)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return "clipboard_api";
+      }
+    } catch (error) {
+      console.log("Clipboard API method failed:", error);
+    }
+
+    try {
+      // Method 3: Fallback với execCommand (deprecated nhưng vẫn hoạt động)
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        return "exec_command";
       } else {
+        throw new Error("execCommand failed");
+      }
+    } catch (error) {
+      console.log("execCommand method failed:", error);
+    }
+
+    // Method 4: Download as file (last resort)
+    const blob = new Blob([text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "zalo-crawler-data.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return "download";
+  }
+
+  // Sự kiện click nút sao chép dữ liệu
+  copyDataButton.addEventListener("click", async function () {
+    // Lấy dữ liệu hiện đang được hiển thị trong tab JSON
+    let dataToExport = currentDisplayedJsonData;
+
+    // Fallback: nếu chưa có dữ liệu nào được hiển thị, sử dụng logic cũ
+    if (!dataToExport) {
+      const activeTab = document
+        .querySelector(".tab.active")
+        .getAttribute("data-tab");
+
+      if (activeTab === "table") {
+        // Nếu đang ở tab dữ liệu hợp lệ
+        // Kiểm tra xem đã chuyển đổi dữ liệu chưa
+        if (convertedDataSchema.clients.length > 0) {
+          dataToExport = convertedDataSchema;
+        } else {
+          dataToExport = messageSchema;
+        }
+      } else if (activeTab === "error") {
+        // Nếu đang ở tab dữ liệu lỗi
+        dataToExport = errorMessageSchema;
+      } else if (activeTab === "downloads") {
+        // Nếu đang ở tab tải xuống
+        dataToExport = DownloadedImageSchema;
+      } else {
+        // Mặc định là dữ liệu hợp lệ
         dataToExport = messageSchema;
       }
-    } else if (activeTab === "error") {
-      // Nếu đang ở tab dữ liệu lỗi
-      dataToExport = errorMessageSchema;
-    } else {
-      // Mặc định là dữ liệu hợp lệ
-      dataToExport = messageSchema;
     }
 
     const jsonString = JSON.stringify(dataToExport, null, 2);
-    navigator.clipboard.writeText(jsonString).then(
-      function () {
-        statusElement.style.display = "block";
-        statusElement.textContent = "Đã sao chép dữ liệu vào clipboard!";
-        statusElement.style.backgroundColor = "#e8f5e9";
-        statusElement.style.color = "#388e3c";
-        setTimeout(function () {
-          statusElement.style.display = "none";
-        }, 3000);
-      },
-      function (err) {
-        statusElement.style.display = "block";
-        statusElement.textContent = "Không thể sao chép dữ liệu: " + err;
-        statusElement.style.backgroundColor = "#ffebee";
-        statusElement.style.color = "#d32f2f";
+
+    try {
+      const method = await copyToClipboard(jsonString);
+
+      // Xác định loại dữ liệu đang được copy
+      let dataType = "dữ liệu";
+      if (dataToExport === messageSchema) {
+        dataType = "dữ liệu crawl gốc";
+      } else if (dataToExport === convertedDataSchema) {
+        dataType = "dữ liệu đã chuyển đổi";
+      } else if (dataToExport === errorMessageSchema) {
+        dataType = "dữ liệu lỗi";
+      } else if (dataToExport === DownloadedImageSchema) {
+        dataType = "dữ liệu tải xuống";
       }
-    );
+
+      statusElement.style.display = "block";
+      statusElement.style.backgroundColor = "#e8f5e9";
+      statusElement.style.color = "#388e3c";
+
+      if (method === "download") {
+        statusElement.textContent = `${dataType} đã được tải xuống dưới dạng file JSON!`;
+      } else {
+        statusElement.textContent = `Đã sao chép ${dataType} vào clipboard! (${method})`;
+      }
+
+      setTimeout(function () {
+        statusElement.style.display = "none";
+      }, 3000);
+    } catch (err) {
+      statusElement.style.display = "block";
+      statusElement.textContent = "Không thể sao chép dữ liệu: " + err.message;
+      statusElement.style.backgroundColor = "#ffebee";
+      statusElement.style.color = "#d32f2f";
+    }
   });
 
   // Sự kiện click nút kiểm tra dữ liệu chat
@@ -1069,6 +1169,9 @@ document.addEventListener("DOMContentLoaded", function () {
       dataToDisplay = data;
     }
 
+    // Lưu dữ liệu hiện đang được hiển thị để có thể copy chính xác
+    currentDisplayedJsonData = dataToDisplay;
+
     // Chuyển đổi JSON thành chuỗi có định dạng đẹp
     const jsonString = JSON.stringify(dataToDisplay, null, 2);
 
@@ -1301,7 +1404,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Sự kiện click nút xuất dữ liệu tải xuống
-  exportDownloadsButton.addEventListener("click", function () {
+  exportDownloadsButton.addEventListener("click", async function () {
     if (DownloadedImageSchema.clients.length === 0) {
       statusElement.style.display = "block";
       statusElement.textContent = "Chưa có dữ liệu tải xuống nào.";
@@ -1311,24 +1414,30 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const jsonString = JSON.stringify(DownloadedImageSchema, null, 2);
-    navigator.clipboard.writeText(jsonString).then(
-      function () {
-        statusElement.style.display = "block";
+
+    try {
+      const method = await copyToClipboard(jsonString);
+
+      statusElement.style.display = "block";
+      statusElement.style.backgroundColor = "#e8f5e9";
+      statusElement.style.color = "#388e3c";
+
+      if (method === "download") {
         statusElement.textContent =
-          "Đã sao chép dữ liệu tải xuống vào clipboard!";
-        statusElement.style.backgroundColor = "#e8f5e9";
-        statusElement.style.color = "#388e3c";
-        setTimeout(function () {
-          statusElement.style.display = "none";
-        }, 3000);
-      },
-      function (err) {
-        statusElement.style.display = "block";
-        statusElement.textContent = "Không thể sao chép dữ liệu: " + err;
-        statusElement.style.backgroundColor = "#ffebee";
-        statusElement.style.color = "#d32f2f";
+          "Dữ liệu tải xuống đã được tải xuống dưới dạng file JSON!";
+      } else {
+        statusElement.textContent = `Đã sao chép dữ liệu tải xuống vào clipboard! (${method})`;
       }
-    );
+
+      setTimeout(function () {
+        statusElement.style.display = "none";
+      }, 3000);
+    } catch (err) {
+      statusElement.style.display = "block";
+      statusElement.textContent = "Không thể sao chép dữ liệu: " + err.message;
+      statusElement.style.backgroundColor = "#ffebee";
+      statusElement.style.color = "#d32f2f";
+    }
   });
 
   // Hàm hiển thị dữ liệu tải xuống
@@ -1545,19 +1654,34 @@ document.addEventListener("DOMContentLoaded", function () {
       // Cập nhật hiển thị dữ liệu theo tab được chọn
       if (tabId === "json") {
         // Nếu đang chuyển sang tab JSON
-        if (previousActiveTabId === "table" || previousActiveTabId === "json") {
-          // Nếu chuyển từ tab "Dữ liệu hợp lệ" hoặc đang ở tab JSON
+        // Hiển thị dữ liệu từ tab trước đó hoặc dữ liệu mặc định
+        if (previousActiveTabId === "table") {
+          // Từ tab "Dữ liệu hợp lệ" - hiển thị dữ liệu đã chuyển đổi hoặc raw data
           if (convertedDataSchema.clients.length > 0) {
             displayJsonData(convertedDataSchema);
           } else {
             displayJsonData(messageSchema);
           }
         } else if (previousActiveTabId === "error") {
-          // Nếu chuyển từ tab "Dữ liệu lỗi" sang
+          // Từ tab "Dữ liệu lỗi" - hiển thị error data
           displayJsonData(errorMessageSchema);
         } else if (previousActiveTabId === "downloads") {
-          // Nếu chuyển từ tab "Tải xuống" sang
+          // Từ tab "Tải xuống" - hiển thị download data
           displayJsonData(DownloadedImageSchema);
+        } else if (previousActiveTabId === "native") {
+          // Từ tab "Native" - hiển thị dữ liệu mặc định
+          if (convertedDataSchema.clients.length > 0) {
+            displayJsonData(convertedDataSchema);
+          } else {
+            displayJsonData(messageSchema);
+          }
+        } else {
+          // Mặc định - hiển thị dữ liệu crawl chính
+          if (convertedDataSchema.clients.length > 0) {
+            displayJsonData(convertedDataSchema);
+          } else {
+            displayJsonData(messageSchema);
+          }
         }
       } else if (tabId === "downloads") {
         // Hiển thị dữ liệu tải xuống

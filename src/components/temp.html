@@ -1,71 +1,72 @@
-<div class="welcome-container">
-  <!-- Logo section -->
-  <header class="logo-section">
-    <div class="logo-wrapper">
-      <div class="logo">
-        <div
-          class="logo-icon"
-          style="
-            background-image: url(./src/Assets/Vx_ZaloCrawler-LogoMark-White.svg);
-          "
-        ></div>
-        <div class="logo-text">
-          <h1 class="logo-title">Zalo<br />Crawler</h1>
-          <span class="version-tag">[Ohio Ver.]</span>
+<div class="dependence-mode-container">
+  <style>
+    .CrawlerApp::before {
+      background-position: bottom right;
+    }
+    @media screen and (max-width: 1333px) {
+      .CrawlerApp::before {
+        background-size: calc(100vh - 160px) calc(100vh - 160px);
+      }
+    }
+    @media screen and (min-width: 1334px) {
+      .CrawlerApp::before {
+        background-size: calc(100vh - 128px) calc(100vh - 128px);
+      }
+    }
+  </style>
+  <script src="https://cdn.lordicon.com/lordicon.js"></script>
+  <!-- Main content -->
+  <div class="main-content">
+    <header class="main-header">
+      <button class="nav-btn--with-icon return-btn" id="backToWelcome">
+        <span class="btn-icon"></span>
+        <span class="btn-text">Quay lại.</span>
+      </button>
+      <h1>Chế độ độc lập.<span>[StandAlone.]</span></h1>
+    </header>
+    <main class="content-wrapper">
+      <div class="form-group" id="jsonDataGroup">
+        <label for="jsonData">Dữ liệu JSON đầu vào.</label>
+        <textarea
+          id="jsonData"
+          placeholder='Dán dữ liệu JSON từ extension vào đây.
+          Ví dụ:
+{
+  "clients": [
+    {
+      "text": "Tên khách hàng 1",
+      "image_names": ["image1.jpg", "image2.jpg"]
+    },
+    {
+      "text": "Tên khách hàng 2", 
+      "image_names": ["image3.jpg"]
+    }
+  ]
+}'
+        ></textarea>
+        <div class="btn-group">
+          <button id="processBtn" class="btn btn-primary light_sweep-effect">
+            <span class="btn-icon"></span>
+            <span class="btn-text">Chuyển đổi</span>
+          </button>
         </div>
       </div>
-    </div>
-  </header>
-
-  <!-- Main content section -->
-  <main class="main-content">
-    <!-- Token section -->
-    <div class="token-section">
-      <div class="token-input-wrapper">
-        <label class="token-label">
-          <input
-            type="text"
-            id="extensionToken"
-            class="token-input"
-            placeholder="Nhập Extension Token để kết nối..."
-            autocomplete="off"
-        /></label>
-
-        <button id="pairedModeBtn" class="btn btn-primary light_sweep-effect">
-          <span class="btn-icon"></span>
-          <span class="btn-text">Khởi tạo.</span>
-        </button>
+      <div class="form-group" id="folderGroupPreview">
+        <label for="folderPath"
+          ><input type="text" id="folderPath" placeholder="Nhập đường dẫn..." />
+          <button id="browseFolderBtn" class="browse-btn btn btn-straytext">
+            Chọn thư mục
+          </button></label
+        >
+        <div id="folderList" class="folder-list">
+          <div id="folderItems"></div>
+        </div>
       </div>
-    </div>
+    </main>
 
-    <!-- Buttons section -->
-    <div class="buttons-section">
-      Hoặc tiếp tục với&nbsp;
-      <button id="dependenceModeBtn" class="btn btn-straytext">
-        Chế độ độc lập
-      </button>
-    </div>
-
-    <!-- Footer text -->
-    <p class="footer-text">
-      * Chế độ độc lập: Mọi chức năng hoạt động bình thường.<br />
-      Người dùng cần sao chép JSON thủ công từ Phần mở rộng<br />
-      của Zalo Crawler trong trình duyệt.
-    </p>
-  </main>
-
-  <!-- Footer section -->
-  <footer class="footer-section">
-    <div class="device-info">
-      <!-- Navigation link - Settings only -->
-      <div class="navigation-links">
-        <button id="settingsBtn" class="nav-btn--with-icon settings-btn">
-          <span class="btn-icon"></span>
-          <span class="btn-text">Thiết lập.</span>
-        </button>
-      </div>
-      <div class="line--vertical"></div>
-      <span class="device-details">Desktop MB5430</span>
-    </div>
-  </footer>
+    <!-- Navigation footer -->
+    <footer class="navigation-footer">
+      <div id="statusMessage" class="status">Sẵn sàng.</div>
+    </footer>
+  </div>
 </div>

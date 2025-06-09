@@ -13,7 +13,9 @@
     "activeTab",
     "scripting",
     "nativeMessaging",
-    "downloads"
+    "downloads",
+    "clipboardWrite",
+    "offscreen"
   ],
   "host_permissions": ["https://chat.zalo.me/*"],
   "externally_connectable": {

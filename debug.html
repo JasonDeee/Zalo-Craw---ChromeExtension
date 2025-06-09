@@ -86,7 +86,12 @@
         </button>
       </div>
     </div>
-
+    <script>
+      let CRtestCC = document.querySelector(".Vx_CrawlerTarget");
+      // mô phỏng hành động wheel up trong CRTest cho tôi
+      CRtestCC.dispatchEvent(new WheelEvent("wheel", { deltaY: -100 }));
+      console.log(CRtestCC);
+    </script>
     <!-- Load SPA Framework -->
     <script src="src/core/Component.js"></script>
     <script src="src/core/Router.js"></script>

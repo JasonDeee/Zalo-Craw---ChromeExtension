@@ -12,6 +12,7 @@ function createWindow() {
     height: 720,
     frame: false, // Ẩn title bar
     titleBarStyle: "hidden", // Ẩn title bar trên macOS
+    icon: path.join(__dirname, "/Static/Favicon_64.ico"), // Icon cho window
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: true,
@@ -62,21 +63,66 @@ function formatFolderName(text) {
   // Loại bỏ các ký tự không hợp lệ cho tên thư mục
   let folderName = text
     .trim()
-    // Thay thế các ký tự đặc biệt bằng dấu gạch ngang
+    // Loại bỏ các ký tự điều khiển (control characters) như \n, \r, \t
+    .replace(/[\r\n\t\f\v]/g, " ")
+    // Loại bỏ các ký tự whitespace kép thành single space
+    .replace(/\s+/g, " ")
+    // Thay thế các ký tự đặc biệt Windows không cho phép
     .replace(/[\\/:*?"<>|]/g, "-")
+    // Loại bỏ các ký tự Unicode control characters
+    .replace(/[\x00-\x1f\x7f-\x9f]/g, "")
+    // Loại bỏ dấu chấm ở cuối tên (Windows không cho phép)
+    .replace(/\.+$/g, "")
     // Thay thế nhiều dấu gạch ngang liên tiếp bằng một dấu
     .replace(/-+/g, "-")
-    // Loại bỏ dấu gạch ngang ở đầu và cuối
-    .replace(/^-|-$/g, "");
+    // Loại bỏ dấu gạch ngang và space ở đầu và cuối
+    .replace(/^[-\s]+|[-\s]+$/g, "");
 
-  // Giới hạn độ dài tên thư mục
-  if (folderName.length > 50) {
-    folderName = folderName.substring(0, 50);
+  // Kiểm tra tên thư mục không được là reserved names của Windows
+  const reservedNames = [
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+  ];
+
+  if (reservedNames.includes(folderName.toUpperCase())) {
+    folderName = `Folder_${folderName}`;
+  }
+
+  // Giới hạn độ dài tên thư mục (Windows cho phép max 255 ký tự)
+  if (folderName.length > 200) {
+    folderName = folderName.substring(0, 200).trim();
+    // Loại bỏ dấu gạch ngang cuối nếu có sau khi cắt
+    folderName = folderName.replace(/[-\s]+$/, "");
   }
 
   // Nếu sau khi format mà tên thư mục rỗng, đặt tên mặc định
-  if (!folderName) {
-    folderName = "Unnamed";
+  if (!folderName || folderName.length === 0) {
+    folderName = "Unnamed_Folder";
+  }
+
+  // Đảm bảo tên thư mục không bắt đầu bằng dấu chấm (hidden folder)
+  if (folderName.startsWith(".")) {
+    folderName = "Folder_" + folderName;
   }
 
   return folderName;
@@ -182,6 +228,8 @@ ipcMain.handle("organize-images", async (event, { folderPath, clients }) => {
     for (const client of clients) {
       // Format tên thư mục
       const folderName = formatFolderName(client.text);
+      console.log(`Original text: "${client.text}"`);
+      console.log(`Formatted folder name: "${folderName}"`);
 
       // Tạo đường dẫn đầy đủ cho thư mục mới
       const clientFolderPath = path.join(folderPath, folderName);
@@ -218,6 +266,94 @@ ipcMain.handle("organize-images", async (event, { folderPath, clients }) => {
     return { success: false, error: error.message };
   }
 });
+
+// IPC handler để quét thư mục và lấy danh sách file
+ipcMain.handle("scan-folder", async (event, folderPath) => {
+  try {
+    if (!fs.existsSync(folderPath)) {
+      throw new Error("Thư mục không tồn tại");
+    }
+
+    const files = await fs.promises.readdir(folderPath);
+
+    // Lọc chỉ lấy file ảnh và video
+    const mediaExtensions = [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".webm",
+      ".jfif",
+      ".bmp",
+      ".webp",
+      ".svg",
+      ".tiff",
+      ".mp4",
+      ".avi",
+      ".mov",
+      ".wmv",
+      ".flv",
+      ".mkv",
+      ".m4v",
+    ];
+
+    const mediaFiles = files.filter((file) => {
+      const ext = path.extname(file).toLowerCase();
+      return mediaExtensions.includes(ext);
+    });
+
+    return mediaFiles;
+  } catch (error) {
+    console.error("Lỗi khi quét thư mục:", error);
+    throw error;
+  }
+});
+
+// IPC handler để format tên thư mục
+ipcMain.handle("format-folder-name", async (event, text) => {
+  try {
+    return formatFolderName(text);
+  } catch (error) {
+    console.error("Lỗi khi format tên thư mục:", error);
+    return text; // Fallback
+  }
+});
+
+// IPC handler để tạo thumbnail
+ipcMain.handle(
+  "generate-thumbnail",
+  async (event, imagePath, width = 96, height = 96) => {
+    try {
+      const { nativeImage } = require("electron");
+
+      if (!fs.existsSync(imagePath)) {
+        throw new Error("File không tồn tại");
+      }
+
+      // Tạo nativeImage từ file path
+      const image = nativeImage.createFromPath(imagePath);
+
+      if (image.isEmpty()) {
+        throw new Error("Không thể đọc file ảnh");
+      }
+
+      // Resize image với quality tốt
+      const resized = image.resize({
+        width,
+        height,
+        quality: "good",
+      });
+
+      // Convert to data URL
+      const dataUrl = resized.toDataURL();
+
+      return dataUrl;
+    } catch (error) {
+      console.error("Lỗi khi tạo thumbnail:", error);
+      throw error;
+    }
+  }
+);
 
 // Native Messaging support
 const TEMP_DIR = path.join(os.tmpdir(), "zalo-crawler");
