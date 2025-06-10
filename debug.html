@@ -87,9 +87,11 @@
       </div>
     </div>
     <script>
-      let CRtestCC = document.querySelector(".Vx_CrawlerTarget");
-      // mô phỏng hành động wheel up trong CRTest cho tôi
+      let CRtestCC = document.querySelector(".block-date");
+      // mô phỏng hành động cursor inside sau đó wheel up trong CRTest cho tôi
+      CRtestCC.dispatchEvent(new MouseEvent("mouseenter"));
       CRtestCC.dispatchEvent(new WheelEvent("wheel", { deltaY: -100 }));
+
       console.log(CRtestCC);
     </script>
     <!-- Load SPA Framework -->

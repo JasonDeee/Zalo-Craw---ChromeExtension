@@ -1,50 +1,23 @@
-const RandomTokenTest = "meag@bhjkdfsxxxx2";
-
 // Biến để lưu trữ thông tin tải xuống
 let downloadQueue = [];
 let processedDownloads = new Set(); // Lưu trữ ID tải xuống đã xử lý
 let currentClientText = "";
 
-// Listen for messages from the extension's background script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "GET_RANDOM_TOKEN") {
-    // Try to get the token via native messaging
-    const nativeHostName = "com.zalocrawler.host";
-
-    // Try to connect to the native host
-    try {
-      const port = chrome.runtime.connectNative(nativeHostName);
-
-      // Handle messages from the native host
-      port.onMessage.addListener((response) => {
-        if (response && response.token) {
-          sendResponse({ token: response.token });
-        } else {
-          sendResponse({ token: RandomTokenTest }); // Fallback to local token
-        }
-      });
-
-      // Handle disconnect
-      port.onDisconnect.addListener(() => {
-        console.log("Disconnected from native host");
-        // Fallback to local token if native messaging fails
-        sendResponse({ token: RandomTokenTest });
-      });
-
-      // Send the request to the native host
-      port.postMessage({ action: "GET_RANDOM_TOKEN" });
-
-      return true; // Keep the message channel open for async response
-    } catch (error) {
-      console.error("Native host error:", error);
-      // Fallback to local token if native messaging is not available
-      sendResponse({ token: RandomTokenTest });
-      return false;
-    }
-  }
-  return true; // Required for async response
-});
-
+const convertedSchema = {
+  clients: [
+    {
+      text: "Hello", // Text này có thể là tên khách hàng
+      images: [
+        {
+          id: "img-1748913434621.3134982196889778592.g3002843645600913037-MESSAGE_LIST_GROUP_PHOTO",
+          preview_url:
+            "blob:https://chat.zalo.me/7522e953-8e89-4340-9f90-25b42bd8f07f",
+        },
+      ],
+      error: false,
+    },
+  ],
+};
 const ImageListSchema = [
   {
     text: "Tên khách hàng",
@@ -114,6 +87,14 @@ document.addEventListener("DOMContentLoaded", function () {
         // Mảng kết quả
         const conversations = [];
         
+        // Hỗ trợ các loại tin nhắn:
+        // 1. Text messages - .text-message__container .text
+        // 2. Group photos - .card--group-photo .zimg-el  
+        // 3. Single images - .chatImageMessage--audit .zimg-el, .img-msg-v2 .zimg-el
+        // 4. Image captions - .img-msg-v2__cap .text
+        // 5. Quoted messages - .message-quote-fragment__container + main text
+        // 6. Recalled messages - .undo-message (XÓA KHỎI DỮ LIỆU)
+        
         // Duyệt qua từng block
         targetBlocks.forEach(block => {
           // Tìm tất cả chat-item trong block
@@ -156,21 +137,59 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             
             // Xử lý tin nhắn trong chat-item hiện tại
-            // Tìm tin nhắn văn bản
-            const textMessages = chatItem.querySelectorAll('.text-message__container .text');
-            textMessages.forEach(textMsg => {
-              currentMessageGroup.messages.push({
-                type: "text",
-                content: textMsg.textContent.trim()
-              });
-            });
             
-            // Tìm tin nhắn hình ảnh
-            const imageMessages = chatItem.querySelectorAll('.card--group-photo .zimg-el');
-            if (imageMessages.length > 0) {
+            // 0. Kiểm tra tin nhắn recalled (thu hồi) - BỎ QUA HOÀN TOÀN
+            const recalledMessage = chatItem.querySelector('.undo-message');
+            if (recalledMessage && recalledMessage.textContent.includes('Tin nhắn đã được thu hồi')) {
+              // Bỏ qua tin nhắn recalled, không thêm vào messages
+              return; // Skip this chat-item completely
+            }
+            
+            // 1. Kiểm tra tin nhắn quoted (trích dẫn) trước
+            const quoteContainer = chatItem.querySelector('.message-quote-fragment__container');
+            if (quoteContainer) {
+              // Có tin nhắn quoted - xử lý riêng
+              
+              // BỎ QUA QUOTED CONTENT - không thêm vào messages
+              // Theo logic mới: chỉ quan tâm reply text, không quan tâm quoted content
+              
+              // Lấy nội dung reply chính (ngoài quote container)
+              const mainTextContainer = chatItem.querySelector('.text-message__container');
+              if (mainTextContainer) {
+                // Tìm text ngoài quote container
+                const allTexts = mainTextContainer.querySelectorAll('.text');
+                allTexts.forEach(textElement => {
+                  // Kiểm tra xem text này có nằm trong quote container không
+                  const isInsideQuote = quoteContainer.contains(textElement);
+                  if (!isInsideQuote) {
+                    const textContent = textElement.textContent.trim();
+                    if (textContent) {
+                      // CHỈ LẤY REPLY TEXT, KHÔNG QUAN TÂM QUOTED CONTENT
+                      currentMessageGroup.messages.push({
+                        type: "text", // Đơn giản hóa: quoted message → text
+                        content: textContent
+                      });
+                    }
+                  }
+                });
+              }
+            } else {
+              // 2. Tin nhắn văn bản thông thường (không có quote)
+              const textMessages = chatItem.querySelectorAll('.text-message__container .text');
+              textMessages.forEach(textMsg => {
+                currentMessageGroup.messages.push({
+                  type: "text",
+                  content: textMsg.textContent.trim()
+                });
+              });
+            }
+            
+            // 2. Tìm tin nhắn hình ảnh nhóm (Group photos)
+            const groupImageMessages = chatItem.querySelectorAll('.card--group-photo .zimg-el');
+            if (groupImageMessages.length > 0) {
               const imageContent = [];
               
-              imageMessages.forEach(img => {
+              groupImageMessages.forEach(img => {
                 imageContent.push({
                   id: img.id,
                   preview_url: img.src
@@ -184,11 +203,60 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
               }
             }
+            
+            // 3. Tìm tin nhắn hình ảnh đơn lẻ hoặc có caption (Single/Caption images)
+            const singleImageMessages = chatItem.querySelectorAll('.chatImageMessage--audit .zimg-el, .img-msg-v2 .zimg-el');
+            if (singleImageMessages.length > 0) {
+              const imageContent = [];
+              
+              singleImageMessages.forEach(img => {
+                // Kiểm tra xem hình ảnh này đã được xử lý trong group photos chưa
+                const alreadyProcessed = Array.from(groupImageMessages).some(groupImg => groupImg.id === img.id);
+                if (!alreadyProcessed) {
+                  imageContent.push({
+                    id: img.id,
+                    preview_url: img.src
+                  });
+                }
+              });
+              
+              if (imageContent.length > 0) {
+                currentMessageGroup.messages.push({
+                  type: "image",
+                  content: imageContent
+                });
+              }
+            }
+            
+            // 4. Tìm caption text cho hình ảnh (Image with Caption)
+            const imageCaptions = chatItem.querySelectorAll('.img-msg-v2__cap .text');
+            imageCaptions.forEach(captionText => {
+              const captionContent = captionText.textContent.trim();
+              if (captionContent) {
+                currentMessageGroup.messages.push({
+                  type: "text",
+                  content: captionContent
+                });
+              }
+            });
           });
         });
         
         // Lọc bỏ các nhóm tin nhắn không có tin nhắn nào
-        return conversations.filter(group => group.messages.length > 0);
+        const filteredConversations = conversations.filter(group => group.messages.length > 0);
+        
+        // Debug info theo logic mới
+        console.log('🎯 Crawl Results Summary (New Logic):');
+        filteredConversations.forEach((group, index) => {
+          const totalMsg = group.messages.length;
+          const textMsg = group.messages.filter(m => m.type === 'text').length;
+          const imageMsg = group.messages.filter(m => m.type === 'image').length;
+          const isEven = totalMsg % 2 === 0;
+          const status = isEven ? '✅ EVEN' : '❌ ODD';
+                     console.log('Group ' + (index + 1) + ' - ' + group.sender + ': ' + totalMsg + ' total (' + textMsg + ' text, ' + imageMsg + ' image) → ' + status);
+        });
+        
+        return filteredConversations;
       })();
     `,
       (result, isException) => {
@@ -211,8 +279,13 @@ document.addEventListener("DOMContentLoaded", function () {
           // Kiểm tra và phân loại dữ liệu
           classifyData(result);
 
-          // Hiển thị số lượng tin nhắn đã crawl được
-          const countMessage = `Đã crawl được ${result.length} nhóm tin nhắn. Có ${messageSchema.conversations.length} nhóm hợp lệ và ${errorMessageSchema.conversations.length} nhóm không hợp lệ.`;
+          // Hiển thị số lượng tin nhắn đã crawl được theo logic mới
+          const totalCrawled = result.length;
+          const validGroups = messageSchema.conversations.length;
+          const errorGroups = errorMessageSchema.conversations.length;
+          const skippedGroups = totalCrawled - validGroups - errorGroups; // Nhóm bị bỏ qua (0 messages sau filter)
+
+          const countMessage = `✅ Crawl hoàn tất: ${totalCrawled} nhóm → ${validGroups} hợp lệ (CHẴN), ${errorGroups} lỗi (LẺ), ${skippedGroups} bỏ qua`;
           statusElement.textContent = countMessage;
           statusElement.style.backgroundColor = "#e8f5e9";
           statusElement.style.color = "#388e3c";
@@ -241,26 +314,242 @@ document.addEventListener("DOMContentLoaded", function () {
     );
   });
 
-  // Hàm phân loại dữ liệu
+  // Hàm đơn giản hóa tin nhắn theo logic mới
+  function simplifyMessages(messages) {
+    return messages
+      .map((msg) => {
+        // Chuyển đổi quoted messages thành text (chỉ lấy reply text)
+        if (msg.type === "quote_text" || msg.type === "quote_image") {
+          return {
+            type: "text",
+            content: msg.content || "Reply message", // Sử dụng content nếu có, fallback to placeholder
+          };
+        }
+        // Giữ nguyên text và image
+        return msg;
+      })
+      .filter((msg) => {
+        // Lọc bỏ recalled messages (nếu có sót)
+        return msg.type !== "recalled";
+      });
+  }
+
+  // Hàm phân loại dữ liệu theo logic mới
   function classifyData(conversations) {
     conversations.forEach((group) => {
-      // Kiểm tra tính hợp lệ của nhóm tin nhắn
-      const totalMessages = group.messages.length;
-      const imageMessages = group.messages.filter(
-        (msg) => msg.type === "image"
-      ).length;
+      // Bước 1: Lọc và đơn giản hóa tin nhắn
+      const simplifiedMessages = simplifyMessages(group.messages);
 
-      // Điều kiện không hợp lệ: số lượng tin nhắn lẻ hoặc không đủ hình ảnh
-      if (totalMessages % 2 !== 0 || imageMessages < totalMessages / 2) {
-        // Thêm vào schema lỗi
-        errorMessageSchema.conversations.push(
-          JSON.parse(JSON.stringify(group))
+      // Bước 2: Kiểm tra sender còn tin nhắn không (sau khi lọc recalled)
+      if (simplifiedMessages.length === 0) {
+        // Sender không còn tin nhắn nào -> Bỏ qua hoàn toàn
+        return; // Không thêm vào cả valid lẫn error
+      }
+
+      // Bước 3: Cập nhật group với messages đã simplified
+      const processedGroup = {
+        ...group,
+        messages: simplifiedMessages,
+      };
+
+      // Bước 4: Validation theo logic mới - CHỈ CHẤP NHẬN CHẴN
+      const totalMessages = simplifiedMessages.length;
+      let isValid = false;
+      let reason = "";
+
+      if (totalMessages % 2 !== 0) {
+        // Số lẻ -> LOẠI
+        reason = `Số tin nhắn lẻ (${totalMessages}) - Chỉ chấp nhận số chẵn`;
+      } else {
+        // Số chẵn -> Kiểm tra từng cặp
+        isValid = true;
+        for (let i = 0; i < totalMessages; i += 2) {
+          const msg1 = simplifiedMessages[i];
+          const msg2 = simplifiedMessages[i + 1];
+
+          // Mỗi cặp phải có 1 text + 1 image
+          const hasText = msg1.type === "text" || msg2.type === "text";
+          const hasImage = msg1.type === "image" || msg2.type === "image";
+          const sameType = msg1.type === msg2.type;
+
+          if (sameType || !hasText || !hasImage) {
+            isValid = false;
+            reason = `Cặp tin nhắn ${
+              i / 2 + 1
+            }: Phải có 1 text + 1 image (hiện có: ${msg1.type} + ${msg2.type})`;
+            break;
+          }
+        }
+      }
+
+      if (isValid) {
+        messageSchema.conversations.push(
+          JSON.parse(JSON.stringify(processedGroup))
         );
       } else {
-        // Thêm vào schema hợp lệ
-        messageSchema.conversations.push(JSON.parse(JSON.stringify(group)));
+        const errorGroup = JSON.parse(JSON.stringify(processedGroup));
+        errorGroup.errorReason = reason;
+        errorMessageSchema.conversations.push(errorGroup);
       }
     });
+  }
+
+  // Hàm xóa tin nhắn trong error table
+  function deleteErrorMessage(groupIndex, messageIndex) {
+    // Xóa tin nhắn khỏi error schema
+    errorMessageSchema.conversations[groupIndex].messages.splice(
+      messageIndex,
+      1
+    );
+
+    // Kiểm tra xem nhóm tin nhắn còn tin nhắn nào không
+    if (errorMessageSchema.conversations[groupIndex].messages.length === 0) {
+      // Nếu không còn tin nhắn nào, xóa cả nhóm
+      errorMessageSchema.conversations.splice(groupIndex, 1);
+    }
+
+    // Cập nhật hiển thị error table
+    displayErrorTableData(errorMessageSchema.conversations);
+
+    // Cập nhật thông báo
+    statusElement.style.display = "block";
+    statusElement.textContent = "Đã xóa tin nhắn lỗi thành công.";
+    statusElement.style.backgroundColor = "#e8f5e9";
+    statusElement.style.color = "#388e3c";
+    setTimeout(function () {
+      statusElement.style.display = "none";
+    }, 2000);
+  }
+
+  // Drag & Drop Variables
+  let draggedElement = null;
+  let dragData = null;
+
+  // Drag & Drop Functions
+  function handleDragStart(e) {
+    draggedElement = this;
+    dragData = {
+      imageId: this.getAttribute("data-image-id"),
+      imagePreview: this.getAttribute("data-image-preview"),
+      sourceGroup: parseInt(this.getAttribute("data-source-group")),
+      sourceMessage: parseInt(this.getAttribute("data-source-message")),
+      imageIndex: parseInt(this.getAttribute("data-image-index")),
+    };
+
+    this.style.opacity = "0.5";
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", this.outerHTML);
+
+    console.log("🎯 Drag started:", dragData);
+  }
+
+  function handleDragEnd(e) {
+    this.style.opacity = "";
+    draggedElement = null;
+
+    // Remove drag over styling from all drop targets
+    document.querySelectorAll(".drag-over").forEach((el) => {
+      el.classList.remove("drag-over");
+    });
+  }
+
+  function handleDragOver(e) {
+    if (e.preventDefault) {
+      e.preventDefault();
+    }
+
+    e.dataTransfer.dropEffect = "move";
+    this.classList.add("drag-over");
+    return false;
+  }
+
+  function handleDragLeave(e) {
+    this.classList.remove("drag-over");
+  }
+
+  function handleDrop(e) {
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+
+    this.classList.remove("drag-over");
+
+    if (!dragData) return false;
+
+    // Lấy target message information
+    const targetMessageRow = this.closest(".message-row");
+    if (!targetMessageRow) return false;
+
+    const targetGroupIndex = parseInt(
+      targetMessageRow
+        .querySelector(".message-content")
+        .getAttribute("data-group-index")
+    );
+    const targetMessageIndex = parseInt(
+      targetMessageRow
+        .querySelector(".message-content")
+        .getAttribute("data-message-index")
+    );
+
+    console.log("🎯 Drop target:", { targetGroupIndex, targetMessageIndex });
+
+    // Thực hiện move image
+    moveImageBetweenMessages(dragData, targetGroupIndex, targetMessageIndex);
+
+    return false;
+  }
+
+  function moveImageBetweenMessages(
+    dragData,
+    targetGroupIndex,
+    targetMessageIndex
+  ) {
+    const sourceGroup = errorMessageSchema.conversations[dragData.sourceGroup];
+    const sourceMessage = sourceGroup.messages[dragData.sourceMessage];
+    const targetGroup = errorMessageSchema.conversations[targetGroupIndex];
+    const targetMessage = targetGroup.messages[targetMessageIndex];
+
+    // Chỉ cho phép move image vào message type "image"
+    if (targetMessage.type !== "image") {
+      statusElement.style.display = "block";
+      statusElement.textContent =
+        "❌ Chỉ có thể di chuyển hình ảnh vào tin nhắn loại IMAGE!";
+      statusElement.style.backgroundColor = "#ffebee";
+      statusElement.style.color = "#d32f2f";
+      setTimeout(() => (statusElement.style.display = "none"), 3000);
+      return;
+    }
+
+    // Lấy image data từ source
+    const imageData = sourceMessage.content[dragData.imageIndex];
+
+    // Thêm vào target message
+    targetMessage.content.push(imageData);
+
+    // Xóa khỏi source message
+    sourceMessage.content.splice(dragData.imageIndex, 1);
+
+    // Nếu source message không còn images, xóa message
+    if (sourceMessage.content.length === 0) {
+      sourceGroup.messages.splice(dragData.sourceMessage, 1);
+
+      // Nếu group không còn messages, xóa group
+      if (sourceGroup.messages.length === 0) {
+        errorMessageSchema.conversations.splice(dragData.sourceGroup, 1);
+      }
+    }
+
+    // Cập nhật hiển thị
+    displayErrorTableData(errorMessageSchema.conversations);
+
+    // Thông báo thành công
+    statusElement.style.display = "block";
+    statusElement.textContent = `✅ Đã di chuyển hình ảnh ${imageData.id} thành công!`;
+    statusElement.style.backgroundColor = "#e8f5e9";
+    statusElement.style.color = "#388e3c";
+    setTimeout(() => (statusElement.style.display = "none"), 3000);
+
+    console.log("🎯 Image moved successfully:", imageData.id);
   }
 
   // Hàm copy dữ liệu với fallback methods
@@ -421,9 +710,11 @@ document.addEventListener("DOMContentLoaded", function () {
     // Hiển thị kết quả kiểm tra
     displayTableData(messageSchema.conversations, checkResults);
 
-    // Hiển thị thông báo
+    // Hiển thị thông báo theo logic mới
     statusElement.style.display = "block";
-    statusElement.textContent = `Đã kiểm tra ${checkResults.totalGroups} nhóm tin nhắn, phát hiện ${checkResults.problematicGroups} nhóm có vấn đề.`;
+    const validGroups =
+      checkResults.totalGroups - checkResults.problematicGroups;
+    statusElement.textContent = `🔍 Kiểm tra hoàn tất: ${validGroups} nhóm CHUẨN (chẵn + text-image pairs), ${checkResults.problematicGroups} nhóm LỖI`;
 
     if (checkResults.problematicGroups > 0) {
       statusElement.style.backgroundColor = "#fff8e1";
@@ -451,9 +742,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // Hiển thị dữ liệu đã chuyển đổi
     displayConvertedData(convertedDataSchema.clients);
 
-    // Hiển thị thông báo
+    // Hiển thị thông báo theo logic mới
     statusElement.style.display = "block";
-    statusElement.textContent = `Đã chuyển đổi thành công ${convertedDataSchema.clients.length} nhóm dữ liệu khách hàng.`;
+    statusElement.textContent = `🎯 Chuyển đổi thành công: ${convertedDataSchema.clients.length} cặp khách hàng (text + images) từ ${messageSchema.conversations.length} nhóm hợp lệ`;
     statusElement.style.backgroundColor = "#e8f5e9";
     statusElement.style.color = "#388e3c";
 
@@ -760,52 +1051,45 @@ document.addEventListener("DOMContentLoaded", function () {
     processImages(0);
   }
 
-  // Hàm chuyển đổi dữ liệu
+  // Hàm chuyển đổi dữ liệu theo logic mới - CHỈ XỬ LÝ CHẴN MESSAGES
   function convertData(conversations) {
     // Reset dữ liệu chuyển đổi cũ
     convertedDataSchema.clients = [];
 
-    // Duyệt qua từng nhóm tin nhắn
+    // Duyệt qua từng nhóm tin nhắn (chỉ những nhóm đã PASS validation)
     conversations.forEach((group) => {
       const messages = group.messages;
 
-      // Xử lý từng cặp tin nhắn liền kề
+      // Logic đơn giản: Xử lý từng cặp tin nhắn liên tiếp
       for (let i = 0; i < messages.length; i += 2) {
-        // Kiểm tra xem còn đủ 2 tin nhắn không
-        if (i + 1 < messages.length) {
-          const firstMessage = messages[i];
-          const secondMessage = messages[i + 1];
+        const msg1 = messages[i];
+        const msg2 = messages[i + 1];
 
-          // Tạo đối tượng client mới
-          const clientData = {
-            text: "",
-            images: [],
-            error: false,
-          };
+        const clientData = {
+          text: "",
+          images: [],
+          error: false,
+        };
 
-          // Kiểm tra loại tin nhắn
-          if (firstMessage.type === secondMessage.type) {
-            // Nếu 2 tin nhắn cùng loại, đánh dấu lỗi
-            clientData.error = true;
-          }
-
-          // Xử lý tin nhắn đầu tiên
-          if (firstMessage.type === "text") {
-            clientData.text = firstMessage.content;
-          } else if (firstMessage.type === "image") {
-            clientData.images = clientData.images.concat(firstMessage.content);
-          }
-
-          // Xử lý tin nhắn thứ hai
-          if (secondMessage.type === "text") {
-            clientData.text = secondMessage.content;
-          } else if (secondMessage.type === "image") {
-            clientData.images = clientData.images.concat(secondMessage.content);
-          }
-
-          // Thêm vào danh sách clients
-          convertedDataSchema.clients.push(clientData);
+        // Xử lý cặp tin nhắn
+        if (msg1.type === "text") {
+          clientData.text = msg1.content;
+        } else if (msg1.type === "image") {
+          clientData.images = clientData.images.concat(msg1.content);
         }
+
+        if (msg2.type === "text") {
+          clientData.text = msg2.content;
+        } else if (msg2.type === "image") {
+          clientData.images = clientData.images.concat(msg2.content);
+        }
+
+        // Kiểm tra error case (same type - không nên xảy ra nếu validation đúng)
+        if (msg1.type === msg2.type) {
+          clientData.error = true;
+        }
+
+        convertedDataSchema.clients.push(clientData);
       }
     });
   }
@@ -860,11 +1144,22 @@ document.addEventListener("DOMContentLoaded", function () {
       // Hiển thị hình ảnh
       if (client.images && client.images.length > 0) {
         const imageGrid = document.createElement("div");
-        imageGrid.className = "image-grid";
+        imageGrid.className = "image-grid drop-target";
 
-        client.images.forEach((img) => {
+        // Drop target events cho grid
+        imageGrid.addEventListener("dragover", handleDragOver);
+        imageGrid.addEventListener("dragleave", handleDragLeave);
+        imageGrid.addEventListener("drop", handleDrop);
+
+        client.images.forEach((img, imgIndex) => {
           const imageItem = document.createElement("div");
-          imageItem.className = "image-item";
+          imageItem.className = "image-item dragable";
+          imageItem.draggable = true;
+          imageItem.setAttribute("data-image-id", img.id);
+          imageItem.setAttribute("data-image-preview", img.preview_url);
+          imageItem.setAttribute("data-source-group", clientIndex);
+          imageItem.setAttribute("data-source-message", imgIndex);
+          imageItem.setAttribute("data-image-index", imgIndex);
 
           const image = document.createElement("img");
           image.className = "image-preview";
@@ -875,18 +1170,12 @@ document.addEventListener("DOMContentLoaded", function () {
           imageId.className = "image-id";
           imageId.textContent = img.id;
 
-          // Thêm nút tải xuống cho từng hình ảnh
-          const downloadButton = document.createElement("div");
-          downloadButton.className = "download-image";
-          downloadButton.innerHTML = "⬇️"; // Biểu tượng tải xuống
-          downloadButton.title = "Tải hình ảnh này";
-          downloadButton.addEventListener("click", function () {
-            downloadSingleImage(img.id, client.text);
-          });
+          // Drag events
+          imageItem.addEventListener("dragstart", handleDragStart);
+          imageItem.addEventListener("dragend", handleDragEnd);
 
           imageItem.appendChild(image);
           imageItem.appendChild(imageId);
-          imageItem.appendChild(downloadButton);
           imageGrid.appendChild(imageItem);
         });
 
@@ -1070,7 +1359,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Hàm kiểm tra dữ liệu chat
+  // Hàm kiểm tra dữ liệu chat theo logic mới
   function checkChatData(conversations) {
     let problematicGroups = 0;
     const results = {
@@ -1084,24 +1373,32 @@ document.addEventListener("DOMContentLoaded", function () {
       let isProblematic = false;
       let reason = "";
 
-      // Đếm số lượng tin nhắn và số lượng tin nhắn hình ảnh
+      // Áp dụng logic giống như classifyData
       const totalMessages = group.messages.length;
-      const imageMessages = group.messages.filter(
-        (msg) => msg.type === "image"
-      ).length;
-      const textMessages = group.messages.filter(
-        (msg) => msg.type === "text"
-      ).length;
 
-      // Kiểm tra số lượng tin nhắn là số lẻ
       if (totalMessages % 2 !== 0) {
+        // Số lẻ -> LOẠI
         isProblematic = true;
-        reason = `Số lượng tin nhắn là số lẻ (${totalMessages})`;
-      }
-      // Kiểm tra số lượng tin nhắn hình ảnh < 50% tổng số tin nhắn khi số tin nhắn là chẵn
-      else if (imageMessages < totalMessages / 2) {
-        isProblematic = true;
-        reason = `Số lượng tin nhắn hình ảnh (${imageMessages}) < 50% tổng số tin nhắn (${totalMessages})`;
+        reason = `Số tin nhắn lẻ (${totalMessages}) - Chỉ chấp nhận số chẵn`;
+      } else {
+        // Số chẵn -> Kiểm tra từng cặp
+        for (let i = 0; i < totalMessages; i += 2) {
+          const msg1 = group.messages[i];
+          const msg2 = group.messages[i + 1];
+
+          // Mỗi cặp phải có 1 text + 1 image
+          const hasText = msg1.type === "text" || msg2.type === "text";
+          const hasImage = msg1.type === "image" || msg2.type === "image";
+          const sameType = msg1.type === msg2.type;
+
+          if (sameType || !hasText || !hasImage) {
+            isProblematic = true;
+            reason = `Cặp tin nhắn ${
+              i / 2 + 1
+            }: Phải có 1 text + 1 image (hiện có: ${msg1.type} + ${msg2.type})`;
+            break;
+          }
+        }
       }
 
       if (isProblematic) {
@@ -1258,16 +1555,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
         contentCell.appendChild(deleteButton);
 
-        // Hiển thị nội dung tin nhắn tùy theo loại
+        // Hiển thị nội dung tin nhắn tùy theo loại (chỉ text và image)
         if (message.type === "text") {
           contentCell.appendChild(document.createTextNode(message.content));
         } else if (message.type === "image") {
           const imageGrid = document.createElement("div");
-          imageGrid.className = "image-grid";
+          imageGrid.className = "image-grid drop-target";
 
-          message.content.forEach((img) => {
+          // Drop target events cho grid
+          imageGrid.addEventListener("dragover", handleDragOver);
+          imageGrid.addEventListener("dragleave", handleDragLeave);
+          imageGrid.addEventListener("drop", handleDrop);
+
+          message.content.forEach((img, imgIndex) => {
             const imageItem = document.createElement("div");
-            imageItem.className = "image-item";
+            imageItem.className = "image-item dragable";
+            imageItem.draggable = true;
+            imageItem.setAttribute("data-image-id", img.id);
+            imageItem.setAttribute("data-image-preview", img.preview_url);
+            imageItem.setAttribute("data-source-group", groupIndex);
+            imageItem.setAttribute("data-source-message", messageIndex);
+            imageItem.setAttribute("data-image-index", imgIndex);
 
             const image = document.createElement("img");
             image.className = "image-preview";
@@ -1277,6 +1585,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const imageId = document.createElement("div");
             imageId.className = "image-id";
             imageId.textContent = img.id;
+
+            // Drag events
+            imageItem.addEventListener("dragstart", handleDragStart);
+            imageItem.addEventListener("dragend", handleDragEnd);
 
             imageItem.appendChild(image);
             imageItem.appendChild(imageId);
@@ -1335,12 +1647,39 @@ document.addEventListener("DOMContentLoaded", function () {
       const imageMessages = group.messages.filter(
         (msg) => msg.type === "image"
       ).length;
-      let reason = "";
+      const textMessages = group.messages.filter(
+        (msg) => msg.type === "text"
+      ).length;
 
-      if (totalMessages % 2 !== 0) {
-        reason = `Số lượng tin nhắn là số lẻ (${totalMessages})`;
-      } else if (imageMessages < totalMessages / 2) {
-        reason = `Số lượng tin nhắn hình ảnh (${imageMessages}) < 50% tổng số tin nhắn (${totalMessages})`;
+      // Sử dụng errorReason đã được lưu từ classifyData nếu có
+      let reason = group.errorReason || "";
+
+      // Nếu chưa có reason, tính toán lại theo logic mới
+      if (!reason) {
+        if (totalMessages === 0) {
+          reason = "Nhóm không có tin nhắn nào";
+        } else if (totalMessages % 2 !== 0) {
+          reason = `Số tin nhắn lẻ (${totalMessages}) - Chỉ chấp nhận số chẵn`;
+        } else {
+          // Kiểm tra từng cặp
+          for (let i = 0; i < totalMessages; i += 2) {
+            const msg1 = group.messages[i];
+            const msg2 = group.messages[i + 1];
+
+            const hasText = msg1.type === "text" || msg2.type === "text";
+            const hasImage = msg1.type === "image" || msg2.type === "image";
+            const sameType = msg1.type === msg2.type;
+
+            if (sameType || !hasText || !hasImage) {
+              reason = `Cặp tin nhắn ${
+                i / 2 + 1
+              }: Phải có 1 text + 1 image (hiện có: ${msg1.type} + ${
+                msg2.type
+              })`;
+              break;
+            }
+          }
+        }
       }
 
       const reasonElement = document.createElement("div");
@@ -1348,6 +1687,41 @@ document.addEventListener("DOMContentLoaded", function () {
       reasonElement.textContent = `Lý do: ${reason}`;
       senderCell.appendChild(document.createElement("br"));
       senderCell.appendChild(reasonElement);
+
+      // Thêm Quick Fix buttons
+      const quickFixContainer = document.createElement("div");
+      quickFixContainer.className = "quick-fix-buttons";
+      quickFixContainer.style.marginTop = "10px";
+
+      // Auto Fix button
+      const autoFixBtn = document.createElement("button");
+      autoFixBtn.className = "quick-fix-btn auto-fix";
+      autoFixBtn.innerHTML = "🤖 Auto Fix";
+      autoFixBtn.title = "Tự động sửa lỗi";
+      autoFixBtn.addEventListener("click", () => autoFixGroup(groupIndex));
+
+      // Delete Group button
+      const deleteGroupBtn = document.createElement("button");
+      deleteGroupBtn.className = "quick-fix-btn delete-group";
+      deleteGroupBtn.innerHTML = "🗑️ Delete Group";
+      deleteGroupBtn.title = "Xóa toàn bộ nhóm";
+      deleteGroupBtn.addEventListener("click", () =>
+        deleteErrorGroup(groupIndex)
+      );
+
+      // Move to Valid button
+      const moveToValidBtn = document.createElement("button");
+      moveToValidBtn.className = "quick-fix-btn move-valid";
+      moveToValidBtn.innerHTML = "✅ Force Valid";
+      moveToValidBtn.title = "Chuyển sang dữ liệu hợp lệ";
+      moveToValidBtn.addEventListener("click", () =>
+        forceValidGroup(groupIndex)
+      );
+
+      quickFixContainer.appendChild(autoFixBtn);
+      quickFixContainer.appendChild(deleteGroupBtn);
+      quickFixContainer.appendChild(moveToValidBtn);
+      senderCell.appendChild(quickFixContainer);
 
       senderRow.appendChild(senderCell);
       messageGroup.appendChild(senderRow);
@@ -1363,17 +1737,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const contentCell = document.createElement("td");
         contentCell.className = "message-content";
+        contentCell.setAttribute("data-group-index", groupIndex);
+        contentCell.setAttribute("data-message-index", messageIndex);
 
-        // Hiển thị nội dung tin nhắn tùy theo loại
+        // Tạo nút xóa cho error messages
+        const deleteButton = document.createElement("div");
+        deleteButton.className = "delete-message";
+        deleteButton.innerHTML = "×"; // Dấu X
+        deleteButton.title = "Xóa tin nhắn này";
+        deleteButton.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) {
+            deleteErrorMessage(groupIndex, messageIndex);
+          }
+        });
+        contentCell.appendChild(deleteButton);
+
+        // Hiển thị nội dung tin nhắn tùy theo loại (chỉ text và image)
         if (message.type === "text") {
           contentCell.appendChild(document.createTextNode(message.content));
         } else if (message.type === "image") {
           const imageGrid = document.createElement("div");
-          imageGrid.className = "image-grid";
+          imageGrid.className = "image-grid drop-target";
 
-          message.content.forEach((img) => {
+          // Drop target events cho grid
+          imageGrid.addEventListener("dragover", handleDragOver);
+          imageGrid.addEventListener("dragleave", handleDragLeave);
+          imageGrid.addEventListener("drop", handleDrop);
+
+          message.content.forEach((img, imgIndex) => {
             const imageItem = document.createElement("div");
-            imageItem.className = "image-item";
+            imageItem.className = "image-item dragable";
+            imageItem.draggable = true;
+            imageItem.setAttribute("data-image-id", img.id);
+            imageItem.setAttribute("data-image-preview", img.preview_url);
+            imageItem.setAttribute("data-source-group", groupIndex);
+            imageItem.setAttribute("data-source-message", messageIndex);
+            imageItem.setAttribute("data-image-index", imgIndex);
 
             const image = document.createElement("img");
             image.className = "image-preview";
@@ -1383,6 +1783,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const imageId = document.createElement("div");
             imageId.className = "image-id";
             imageId.textContent = img.id;
+
+            // Drag events
+            imageItem.addEventListener("dragstart", handleDragStart);
+            imageItem.addEventListener("dragend", handleDragEnd);
 
             imageItem.appendChild(image);
             imageItem.appendChild(imageId);
@@ -1841,5 +2245,96 @@ document.addEventListener("DOMContentLoaded", function () {
 
     logContainer.appendChild(entry);
     logContainer.scrollTop = logContainer.scrollHeight;
+  }
+
+  // Quick Fix Functions
+  function autoFixGroup(groupIndex) {
+    const group = errorMessageSchema.conversations[groupIndex];
+    if (!group) return;
+
+    const messages = group.messages;
+    console.log("🤖 Auto-fixing group:", group.sender, messages);
+
+    // Strategy 1: Merge same type messages
+    const textMessages = messages.filter((m) => m.type === "text");
+    const imageMessages = messages.filter((m) => m.type === "image");
+
+    if (textMessages.length > 1) {
+      // Merge all text messages
+      const mergedText = textMessages.map((m) => m.content).join(" ");
+      group.messages = group.messages.filter((m) => m.type !== "text");
+      group.messages.unshift({ type: "text", content: mergedText });
+    }
+
+    if (imageMessages.length > 1) {
+      // Merge all image messages
+      const mergedImages = [];
+      imageMessages.forEach((m) => {
+        mergedImages.push(...m.content);
+      });
+      group.messages = group.messages.filter((m) => m.type !== "image");
+      group.messages.push({ type: "image", content: mergedImages });
+    }
+
+    // Re-validate after auto-fix
+    const newTotal = group.messages.length;
+    if (newTotal % 2 === 0 && newTotal > 0) {
+      // Move to valid if fixed
+      moveToValidGroup(groupIndex);
+    } else {
+      // Re-display if still invalid
+      displayErrorTableData(errorMessageSchema.conversations);
+      statusElement.style.display = "block";
+      statusElement.textContent = `🤖 Auto-fix hoàn tất nhưng vẫn còn lỗi (${newTotal} tin nhắn)`;
+      statusElement.style.backgroundColor = "#fff8e1";
+      statusElement.style.color = "#f57c00";
+      setTimeout(() => (statusElement.style.display = "none"), 3000);
+    }
+  }
+
+  function deleteErrorGroup(groupIndex) {
+    if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ nhóm này?")) return;
+
+    errorMessageSchema.conversations.splice(groupIndex, 1);
+    displayErrorTableData(errorMessageSchema.conversations);
+
+    statusElement.style.display = "block";
+    statusElement.textContent = "🗑️ Đã xóa nhóm lỗi thành công";
+    statusElement.style.backgroundColor = "#e8f5e9";
+    statusElement.style.color = "#388e3c";
+    setTimeout(() => (statusElement.style.display = "none"), 2000);
+  }
+
+  function forceValidGroup(groupIndex) {
+    if (
+      !confirm(
+        "Bạn có chắc chắn muốn chuyển nhóm này sang dữ liệu hợp lệ? (Bỏ qua validation)"
+      )
+    )
+      return;
+
+    moveToValidGroup(groupIndex);
+  }
+
+  function moveToValidGroup(groupIndex) {
+    const group = errorMessageSchema.conversations[groupIndex];
+    if (!group) return;
+
+    // Remove from error schema
+    errorMessageSchema.conversations.splice(groupIndex, 1);
+
+    // Add to valid schema
+    messageSchema.conversations.push(JSON.parse(JSON.stringify(group)));
+
+    // Refresh both displays
+    displayErrorTableData(errorMessageSchema.conversations);
+    const checkResults = checkChatData(messageSchema.conversations);
+    displayTableData(messageSchema.conversations, checkResults);
+
+    statusElement.style.display = "block";
+    statusElement.textContent = `✅ Đã chuyển nhóm "${group.sender}" sang dữ liệu hợp lệ`;
+    statusElement.style.backgroundColor = "#e8f5e9";
+    statusElement.style.color = "#388e3c";
+    setTimeout(() => (statusElement.style.display = "none"), 3000);
   }
 });
