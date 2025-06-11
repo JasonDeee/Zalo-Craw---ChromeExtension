@@ -971,13 +971,14 @@ document.addEventListener("DOMContentLoaded", function () {
                   // Đợi một chút để context menu xuất hiện
                   setTimeout(() => {
                     // Tìm menu tải xuống (phần tử thứ 3 trong context menu)
-                    const menuItems = document.querySelectorAll(
-                      ".popover-v3 .zmenu-body .zmenu-item"
+                    // Update 11/06/2025: Tìm menu tải xuống theo attr: <span data-translate-inner="STR_SAVE_TO_DEVICE">Lưu về máy</span>
+                    const menuItems = document.querySelector(
+                      ".popover-v3 .zmenu-body span[data-translate-inner='STR_SAVE_TO_DEVICE']"
                     );
                     
-                    if (menuItems.length >= 3) {
+                    if (menuItems) {
                       // Click vào nút "Tải xuống"
-                      menuItems[2].click();
+                      menuItems.click();
                       resolve(true);
                     } else {
                       console.warn("Không tìm thấy menu tải xuống");
