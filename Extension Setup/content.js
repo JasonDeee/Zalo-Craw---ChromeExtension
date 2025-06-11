@@ -1,22 +1,22 @@
 // Content script for Zalo Crawler Extension
 console.log("Zalo Crawler content script loaded");
 
-// Create floating test button
-function createTestButton() {
+// Create floating Getting Ready button
+function createGettingReadyButton() {
   // Check if button already exists
-  if (document.getElementById("zalo-crawler-test-btn")) {
+  if (document.getElementById("zalo-crawler-ready-btn")) {
     return;
   }
 
   const button = document.createElement("div");
-  button.id = "zalo-crawler-test-btn";
-  button.innerHTML = "🔗 Test Electron";
+  button.id = "zalo-crawler-ready-btn";
+  button.innerHTML = "🎯 Crawler Setup";
   button.style.cssText = `
     position: fixed;
     bottom: 20px;
     right: 20px;
     z-index: 10000;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     color: white;
     padding: 12px 20px;
     border-radius: 25px;
@@ -35,20 +35,52 @@ function createTestButton() {
   button.addEventListener("mouseenter", () => {
     button.style.transform = "translateY(-2px) scale(1.05)";
     button.style.boxShadow = "0 6px 20px rgba(0, 0, 0, 0.3)";
+    button.style.background =
+      "linear-gradient(135deg, #20c997 0%, #17a2b8 100%)";
   });
 
   button.addEventListener("mouseleave", () => {
     button.style.transform = "translateY(0) scale(1)";
     button.style.boxShadow = "0 4px 15px rgba(0, 0, 0, 0.2)";
+    button.style.background =
+      "linear-gradient(135deg, #28a745 0%, #20c997 100%)";
   });
 
   // Add click handler
   button.addEventListener("click", () => {
-    sendTestMessage();
+    openGettingReadyPopup();
   });
 
   document.body.appendChild(button);
-  console.log("Test button created and added to page");
+  console.log("Getting Ready button created and added to page");
+}
+
+// Open Getting Ready popup manually
+function openGettingReadyPopup() {
+  console.log("🎯 Opening Getting Ready popup manually...");
+
+  // Check if ZaloCrawlerGettingReady class exists
+  if (typeof ZaloCrawlerGettingReady !== "undefined") {
+    // Create new instance of Getting Ready system
+    new ZaloCrawlerGettingReady();
+  } else {
+    console.error(
+      "ZaloCrawlerGettingReady class not found. Make sure GettingReady.js is loaded."
+    );
+
+    // Show fallback notification
+    showNotification(
+      "❌ Lỗi: Không thể mở Getting Ready popup. Vui lòng refresh trang."
+    );
+  }
+}
+
+// HIDDEN - Original Test Electron functionality (giữ nguyên chức năng)
+// Create floating test button (HIDDEN)
+function createTestButton() {
+  // Test Electron button bị ẩn nhưng vẫn giữ nguyên chức năng
+  // Có thể gọi trực tiếp sendTestMessage() từ console nếu cần
+  console.log("Test Electron functionality available via sendTestMessage()");
 }
 
 // Send test message to Electron via native messaging
@@ -165,9 +197,9 @@ function showNotification(message) {
 function init() {
   // Wait for page to be fully loaded
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", createTestButton);
+    document.addEventListener("DOMContentLoaded", createGettingReadyButton);
   } else {
-    createTestButton();
+    createGettingReadyButton();
   }
 }
 

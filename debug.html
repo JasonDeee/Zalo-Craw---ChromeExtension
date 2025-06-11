@@ -86,12 +86,14 @@
         </button>
       </div>
     </div>
+
     <script>
-      let CRtestCC = document.querySelector(".block-date");
+      let CRtestCC = document.querySelector(".transform-gpu");
+      // scroll tới top
+      CRtestCC.scrollTo({ top: 0, behavior: "smooth" });
       // mô phỏng hành động cursor inside sau đó wheel up trong CRTest cho tôi
       CRtestCC.dispatchEvent(new MouseEvent("mouseenter"));
       CRtestCC.dispatchEvent(new WheelEvent("wheel", { deltaY: -100 }));
-
       console.log(CRtestCC);
     </script>
     <!-- Load SPA Framework -->

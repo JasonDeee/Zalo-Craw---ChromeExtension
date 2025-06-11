@@ -28,7 +28,7 @@
   "content_scripts": [
     {
       "matches": ["https://chat.zalo.me/*"],
-      "js": ["content.js"],
+      "js": ["content.js", "GettingReady.js"],
       "run_at": "document_end"
     }
   ]
