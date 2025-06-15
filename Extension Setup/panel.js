@@ -1528,6 +1528,30 @@ document.addEventListener("DOMContentLoaded", function () {
       senderRow.appendChild(senderCell);
       messageGroup.appendChild(senderRow);
 
+      // Thêm hover zone đầu tiên (trước tin nhắn đầu tiên)
+      const firstHoverZone = document.createElement("tr");
+      firstHoverZone.className = "hover-add-zone";
+      firstHoverZone.setAttribute("data-group-index", groupIndex);
+      firstHoverZone.setAttribute("data-position", "0");
+
+      const firstTriggerCell = document.createElement("td");
+      firstTriggerCell.className = "add-message-trigger";
+      firstTriggerCell.colSpan = 2;
+
+      const firstAddBtn = document.createElement("div");
+      firstAddBtn.className = "add-message-btn";
+      // firstAddBtn.textContent = "Thêm tin nhắn text";
+
+      firstTriggerCell.appendChild(firstAddBtn);
+      firstHoverZone.appendChild(firstTriggerCell);
+
+      // Event listener cho hover zone đầu tiên
+      firstHoverZone.addEventListener("click", () => {
+        addTextMessage(groupIndex, 0, false); // false = valid table
+      });
+
+      messageGroup.appendChild(firstHoverZone);
+
       // Duyệt qua từng tin nhắn trong nhóm
       group.messages.forEach((message, messageIndex) => {
         const messageRow = document.createElement("tr");
@@ -1558,7 +1582,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Hiển thị nội dung tin nhắn tùy theo loại (chỉ text và image)
         if (message.type === "text") {
-          contentCell.appendChild(document.createTextNode(message.content));
+          const textNode = document.createTextNode(message.content);
+          contentCell.appendChild(textNode);
+
+          // Make text editable
+          makeTextEditable(textNode, groupIndex, messageIndex, false);
         } else if (message.type === "image") {
           const imageGrid = document.createElement("div");
           imageGrid.className = "image-grid drop-target";
@@ -1602,6 +1630,30 @@ document.addEventListener("DOMContentLoaded", function () {
         messageRow.appendChild(typeCell);
         messageRow.appendChild(contentCell);
         messageGroup.appendChild(messageRow);
+
+        // Thêm hover zone sau mỗi tin nhắn
+        const hoverZone = document.createElement("tr");
+        hoverZone.className = "hover-add-zone";
+        hoverZone.setAttribute("data-group-index", groupIndex);
+        hoverZone.setAttribute("data-position", messageIndex + 1);
+
+        const triggerCell = document.createElement("td");
+        triggerCell.className = "add-message-trigger";
+        triggerCell.colSpan = 2;
+
+        const addBtn = document.createElement("div");
+        addBtn.className = "add-message-btn";
+        // addBtn.textContent = "Thêm tin nhắn text";
+
+        triggerCell.appendChild(addBtn);
+        hoverZone.appendChild(triggerCell);
+
+        // Event listener cho hover zone
+        hoverZone.addEventListener("click", () => {
+          addTextMessage(groupIndex, messageIndex + 1, false); // false = valid table
+        });
+
+        messageGroup.appendChild(hoverZone);
       });
 
       table.appendChild(messageGroup);
@@ -1694,13 +1746,6 @@ document.addEventListener("DOMContentLoaded", function () {
       quickFixContainer.className = "quick-fix-buttons";
       quickFixContainer.style.marginTop = "10px";
 
-      // Auto Fix button
-      const autoFixBtn = document.createElement("button");
-      autoFixBtn.className = "quick-fix-btn auto-fix";
-      autoFixBtn.innerHTML = "🤖 Auto Fix";
-      autoFixBtn.title = "Tự động sửa lỗi";
-      autoFixBtn.addEventListener("click", () => autoFixGroup(groupIndex));
-
       // Delete Group button
       const deleteGroupBtn = document.createElement("button");
       deleteGroupBtn.className = "quick-fix-btn delete-group";
@@ -1719,13 +1764,36 @@ document.addEventListener("DOMContentLoaded", function () {
         forceValidGroup(groupIndex)
       );
 
-      quickFixContainer.appendChild(autoFixBtn);
       quickFixContainer.appendChild(deleteGroupBtn);
       quickFixContainer.appendChild(moveToValidBtn);
       senderCell.appendChild(quickFixContainer);
 
       senderRow.appendChild(senderCell);
       messageGroup.appendChild(senderRow);
+
+      // Thêm hover zone đầu tiên (trước tin nhắn đầu tiên)
+      const firstHoverZone = document.createElement("tr");
+      firstHoverZone.className = "hover-add-zone";
+      firstHoverZone.setAttribute("data-group-index", groupIndex);
+      firstHoverZone.setAttribute("data-position", "0");
+
+      const firstTriggerCell = document.createElement("td");
+      firstTriggerCell.className = "add-message-trigger";
+      firstTriggerCell.colSpan = 2;
+
+      const firstAddBtn = document.createElement("div");
+      firstAddBtn.className = "add-message-btn";
+      // firstAddBtn.textContent = "Thêm tin nhắn text";
+
+      firstTriggerCell.appendChild(firstAddBtn);
+      firstHoverZone.appendChild(firstTriggerCell);
+
+      // Event listener cho hover zone đầu tiên
+      firstHoverZone.addEventListener("click", () => {
+        addTextMessage(groupIndex, 0, true);
+      });
+
+      messageGroup.appendChild(firstHoverZone);
 
       // Duyệt qua từng tin nhắn trong nhóm
       group.messages.forEach((message, messageIndex) => {
@@ -1756,7 +1824,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Hiển thị nội dung tin nhắn tùy theo loại (chỉ text và image)
         if (message.type === "text") {
-          contentCell.appendChild(document.createTextNode(message.content));
+          const textNode = document.createTextNode(message.content);
+          contentCell.appendChild(textNode);
+
+          // Make text editable
+          makeTextEditable(textNode, groupIndex, messageIndex, true);
         } else if (message.type === "image") {
           const imageGrid = document.createElement("div");
           imageGrid.className = "image-grid drop-target";
@@ -1800,6 +1872,30 @@ document.addEventListener("DOMContentLoaded", function () {
         messageRow.appendChild(typeCell);
         messageRow.appendChild(contentCell);
         messageGroup.appendChild(messageRow);
+
+        // Thêm hover zone sau mỗi tin nhắn
+        const hoverZone = document.createElement("tr");
+        hoverZone.className = "hover-add-zone";
+        hoverZone.setAttribute("data-group-index", groupIndex);
+        hoverZone.setAttribute("data-position", messageIndex + 1);
+
+        const triggerCell = document.createElement("td");
+        triggerCell.className = "add-message-trigger";
+        triggerCell.colSpan = 2;
+
+        const addBtn = document.createElement("div");
+        addBtn.className = "add-message-btn";
+        // addBtn.textContent = "Thêm tin nhắn text";
+
+        triggerCell.appendChild(addBtn);
+        hoverZone.appendChild(triggerCell);
+
+        // Event listener cho hover zone
+        hoverZone.addEventListener("click", () => {
+          addTextMessage(groupIndex, messageIndex + 1, true);
+        });
+
+        messageGroup.appendChild(hoverZone);
       });
 
       table.appendChild(messageGroup);
@@ -2248,49 +2344,210 @@ document.addEventListener("DOMContentLoaded", function () {
     logContainer.scrollTop = logContainer.scrollHeight;
   }
 
-  // Quick Fix Functions
-  function autoFixGroup(groupIndex) {
-    const group = errorMessageSchema.conversations[groupIndex];
+  // Manual Editing Functions
+  function addTextMessage(groupIndex, position, isErrorTable = true) {
+    const textContent = prompt("Nhập nội dung tin nhắn text:");
+    if (!textContent || textContent.trim() === "") {
+      return; // User cancelled or entered empty text
+    }
+
+    const schema = isErrorTable ? errorMessageSchema : messageSchema;
+    const group = schema.conversations[groupIndex];
     if (!group) return;
 
-    const messages = group.messages;
-    console.log("🤖 Auto-fixing group:", group.sender, messages);
+    // Create new text message
+    const newMessage = {
+      type: "text",
+      content: textContent.trim(),
+    };
 
-    // Strategy 1: Merge same type messages
-    const textMessages = messages.filter((m) => m.type === "text");
-    const imageMessages = messages.filter((m) => m.type === "image");
+    // Insert at specified position
+    group.messages.splice(position, 0, newMessage);
 
-    if (textMessages.length > 1) {
-      // Merge all text messages
-      const mergedText = textMessages.map((m) => m.content).join(" ");
-      group.messages = group.messages.filter((m) => m.type !== "text");
-      group.messages.unshift({ type: "text", content: mergedText });
-    }
-
-    if (imageMessages.length > 1) {
-      // Merge all image messages
-      const mergedImages = [];
-      imageMessages.forEach((m) => {
-        mergedImages.push(...m.content);
-      });
-      group.messages = group.messages.filter((m) => m.type !== "image");
-      group.messages.push({ type: "image", content: mergedImages });
-    }
-
-    // Re-validate after auto-fix
-    const newTotal = group.messages.length;
-    if (newTotal % 2 === 0 && newTotal > 0) {
-      // Move to valid if fixed
-      moveToValidGroup(groupIndex);
-    } else {
-      // Re-display if still invalid
+    // Re-display the table
+    if (isErrorTable) {
       displayErrorTableData(errorMessageSchema.conversations);
-      statusElement.style.display = "block";
-      statusElement.textContent = `🤖 Auto-fix hoàn tất nhưng vẫn còn lỗi (${newTotal} tin nhắn)`;
-      statusElement.style.backgroundColor = "#fff8e1";
-      statusElement.style.color = "#f57c00";
-      setTimeout(() => (statusElement.style.display = "none"), 3000);
+    } else {
+      const checkResults = checkChatData(messageSchema.conversations);
+      displayTableData(messageSchema.conversations, checkResults);
     }
+
+    // Show success message
+    statusElement.style.display = "block";
+    statusElement.textContent = `✅ Đã thêm tin nhắn text: "${textContent.trim()}"`;
+    statusElement.style.backgroundColor = "#e8f5e9";
+    statusElement.style.color = "#388e3c";
+    setTimeout(() => (statusElement.style.display = "none"), 3000);
+  }
+
+  // Inline Editing Functions
+  function makeTextEditable(
+    textElement,
+    groupIndex,
+    messageIndex,
+    isErrorTable = true
+  ) {
+    const originalText = textElement.textContent;
+
+    // Create editable wrapper
+    const editableWrapper = document.createElement("span");
+    editableWrapper.className = "editable-text";
+    editableWrapper.setAttribute("data-group-index", groupIndex);
+    editableWrapper.setAttribute("data-message-index", messageIndex);
+    editableWrapper.setAttribute("data-is-error-table", isErrorTable);
+
+    // Create edit icon
+    const editIcon = document.createElement("div");
+    editIcon.className = "edit-icon";
+    editIcon.innerHTML = "✏️";
+    editIcon.title = "Chỉnh sửa tin nhắn";
+
+    // Add text content
+    editableWrapper.textContent = originalText;
+    editableWrapper.appendChild(editIcon);
+
+    // Replace original text with editable wrapper
+    textElement.parentNode.replaceChild(editableWrapper, textElement);
+
+    // Add click event for editing
+    editableWrapper.addEventListener("click", (e) => {
+      if (
+        e.target === editIcon ||
+        editableWrapper.classList.contains("editing")
+      ) {
+        startInlineEdit(
+          editableWrapper,
+          originalText,
+          groupIndex,
+          messageIndex,
+          isErrorTable
+        );
+      }
+    });
+
+    return editableWrapper;
+  }
+
+  function startInlineEdit(
+    editableElement,
+    originalText,
+    groupIndex,
+    messageIndex,
+    isErrorTable
+  ) {
+    if (editableElement.classList.contains("editing")) return;
+
+    editableElement.classList.add("editing");
+
+    // Create input element
+    const input = document.createElement("textarea");
+    input.className = "edit-input";
+    input.value = originalText;
+    input.rows = 1;
+
+    // Create control buttons
+    const controls = document.createElement("div");
+    controls.className = "edit-controls";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "edit-btn save";
+    saveBtn.textContent = "💾 Lưu";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "edit-btn cancel";
+    cancelBtn.textContent = "❌ Hủy";
+
+    controls.appendChild(saveBtn);
+    controls.appendChild(cancelBtn);
+
+    // Replace content with input
+    editableElement.innerHTML = "";
+    editableElement.appendChild(input);
+    editableElement.appendChild(controls);
+
+    // Focus and select text
+    input.focus();
+    input.select();
+
+    // Auto-resize textarea
+    function autoResize() {
+      input.style.height = "auto";
+      input.style.height = input.scrollHeight + "px";
+    }
+
+    input.addEventListener("input", autoResize);
+    autoResize();
+
+    // Save function
+    function saveEdit() {
+      const newText = input.value.trim();
+      if (newText === "") {
+        alert("Nội dung tin nhắn không được để trống!");
+        return;
+      }
+
+      // Update data
+      const schema = isErrorTable ? errorMessageSchema : messageSchema;
+      const group = schema.conversations[groupIndex];
+      if (group && group.messages[messageIndex]) {
+        group.messages[messageIndex].content = newText;
+
+        // Re-display table
+        if (isErrorTable) {
+          displayErrorTableData(errorMessageSchema.conversations);
+        } else {
+          const checkResults = checkChatData(messageSchema.conversations);
+          displayTableData(messageSchema.conversations, checkResults);
+        }
+
+        // Show success message
+        statusElement.style.display = "block";
+        statusElement.textContent = `✏️ Đã cập nhật tin nhắn: "${newText}"`;
+        statusElement.style.backgroundColor = "#e8f5e9";
+        statusElement.style.color = "#388e3c";
+        setTimeout(() => (statusElement.style.display = "none"), 3000);
+      }
+    }
+
+    // Cancel function
+    function cancelEdit() {
+      editableElement.classList.remove("editing");
+      editableElement.innerHTML = originalText;
+
+      // Re-add edit icon
+      const editIcon = document.createElement("div");
+      editIcon.className = "edit-icon";
+      editIcon.innerHTML = "✏️";
+      editIcon.title = "Chỉnh sửa tin nhắn";
+      editableElement.appendChild(editIcon);
+    }
+
+    // Event listeners
+    saveBtn.addEventListener("click", saveEdit);
+    cancelBtn.addEventListener("click", cancelEdit);
+
+    // Keyboard shortcuts
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.ctrlKey) {
+        e.preventDefault();
+        saveEdit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        cancelEdit();
+      }
+    });
+
+    // Click outside to cancel
+    function handleClickOutside(e) {
+      if (!editableElement.contains(e.target)) {
+        cancelEdit();
+        document.removeEventListener("click", handleClickOutside);
+      }
+    }
+
+    setTimeout(() => {
+      document.addEventListener("click", handleClickOutside);
+    }, 100);
   }
 
   function deleteErrorGroup(groupIndex) {

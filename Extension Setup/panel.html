@@ -113,7 +113,6 @@
         background-color: white;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         border-radius: 5px;
-        overflow: hidden;
       }
       .message-group {
         border-bottom: 2px solid #f0f0f0;
@@ -126,15 +125,17 @@
         position: relative;
       }
       .message-group.BorderAlert::before {
-        content: "⚠️ Dữ liệu có thể không đúng";
+        content: "⚠️";
         position: absolute;
-        top: 0;
-        right: 10px;
+        top: 8px;
+        left: 0;
         background-color: #ff5252;
         color: white;
         padding: 2px 8px;
+        padding-bottom: 9px;
         font-size: 12px;
-        border-radius: 0 0 4px 4px;
+        border-radius: 16px 0 0 16px;
+        transform: translateX(-100%);
       }
       .sender-row {
         background-color: #f0f6ff;
@@ -162,6 +163,7 @@
       }
       .message-row:hover .delete-message {
         display: flex;
+        opacity: 1;
       }
       .message-type {
         padding: 10px 15px;
@@ -172,7 +174,7 @@
         vertical-align: top;
       }
       .message-content {
-        padding: 10px 15px;
+        padding: 16px 12px;
         vertical-align: top;
         position: relative;
       }
@@ -185,24 +187,26 @@
       }
       .delete-message {
         position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 24px;
-        height: 24px;
+        right: -16px;
+        top: 0;
+        bottom: 0;
+        width: 32px;
+        margin: auto;
+        width: 32px;
+        height: 32px;
         background-color: #ff5252;
         color: white;
         border-radius: 50%;
-        display: none;
+        display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         font-size: 14px;
         z-index: 10;
+        transition: all 0.33s ease;
+        opacity: 0;
       }
-      .delete-message:hover {
-        background-color: #d32f2f;
-      }
+
       .download-image {
         position: absolute;
         right: 5px;
@@ -606,26 +610,7 @@
       }
 
       .message-content {
-        padding: 8px 12px;
         position: relative;
-      }
-
-      .delete-message {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        width: 20px;
-        height: 20px;
-        background-color: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        line-height: 1;
       }
 
       .delete-message:hover {
@@ -872,15 +857,6 @@
         transition: all 0.2s ease;
       }
 
-      .quick-fix-btn.auto-fix {
-        background-color: #17a2b8;
-        color: white;
-      }
-
-      .quick-fix-btn.auto-fix:hover {
-        background-color: #138496;
-      }
-
       .quick-fix-btn.delete-group {
         background-color: #dc3545;
         color: white;
@@ -897,6 +873,177 @@
 
       .quick-fix-btn.move-valid:hover {
         background-color: #218838;
+      }
+
+      /* Hover Add Message Zones */
+      .hover-add-zone {
+        transition: opacity 0.2s ease;
+        cursor: pointer;
+      }
+
+      .hover-add-zone:hover {
+        opacity: 1;
+        background-color: #f0f8ff;
+      }
+
+      .add-message-trigger {
+        padding: 0;
+        text-align: center;
+        transition: all 0.2s ease;
+      }
+
+      .hover-add-zone:hover .add-message-trigger {
+        border-color: #2196f3;
+        background-color: #e3f2fd;
+        padding: 8px 15px;
+      }
+
+      .add-message-btn {
+        color: #2196f3;
+        font-weight: bold;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: end;
+        gap: 5px;
+        transition: all 0.2s ease;
+        height: 0;
+        padding-right: 32px;
+        position: relative;
+      }
+
+      .add-message-btn:before {
+        content: "➕";
+        font-size: 12px;
+        position: absolute;
+        z-index: 100;
+        background: white;
+        padding: 8px;
+        border-radius: 32px;
+      }
+
+      .hover-add-zone:hover .add-message-btn {
+        color: #1976d2;
+      }
+
+      .add-message-btn:after {
+        /* Invisible hover range */
+        content: "";
+        height: 16px;
+        width: 100%;
+        position: absolute;
+        top: -8px;
+        right: 0;
+        z-index: 1;
+      }
+
+      /* Inline Editing Styles */
+      .editable-text {
+        position: relative;
+        display: inline-block;
+        min-width: 100px;
+        cursor: text;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+      }
+
+      .editable-text:hover {
+        background-color: #f8f9fa;
+        border-color: #e9ecef;
+      }
+
+      .editable-text.editing {
+        background-color: #fff;
+        border-color: #2196f3;
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+      }
+
+      .edit-input {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: inherit;
+        color: inherit;
+        width: 100%;
+        min-width: 200px;
+        padding: 0;
+        resize: none;
+        overflow: hidden;
+      }
+
+      .edit-controls {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .edit-btn {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+      }
+
+      .edit-btn.save {
+        background-color: #4caf50;
+        color: white;
+      }
+
+      .edit-btn.save:hover {
+        background-color: #388e3c;
+      }
+
+      .edit-btn.cancel {
+        background-color: #f44336;
+        color: white;
+      }
+
+      .edit-btn.cancel:hover {
+        background-color: #d32f2f;
+      }
+
+      .edit-icon {
+        position: absolute;
+        right: -24px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        background-color: #2196f3;
+        color: white;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 10;
+        transition: all 0.33s ease;
+        opacity: 0;
+        display: flex;
+      }
+
+      .message-content:hover .edit-icon {
+        opacity: 1;
+      }
+
+      .edit-icon:hover {
+        background-color: #1976d2;
+        transform: translateY(-50%) scale(1.1);
       }
     </style>
     <script src="https://cdn.lordicon.com/lordicon.js"></script>

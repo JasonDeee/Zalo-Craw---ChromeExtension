@@ -10,10 +10,10 @@ function createGettingReadyButton() {
 
   const button = document.createElement("div");
   button.id = "zalo-crawler-ready-btn";
-  button.innerHTML = "🎯 Crawler Setup";
+  button.innerHTML = "🎯 Setup";
   button.style.cssText = `
     position: fixed;
-    bottom: 20px;
+    top: 176px;
     right: 20px;
     z-index: 10000;
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
@@ -28,7 +28,6 @@ function createGettingReadyButton() {
     transition: all 0.3s ease;
     user-select: none;
     border: 2px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
   `;
 
   // Add hover effects
