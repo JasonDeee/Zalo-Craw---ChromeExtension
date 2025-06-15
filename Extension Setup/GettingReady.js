@@ -474,9 +474,9 @@ function autoInitGettingReady() {
   window.zaloCrawlerGettingReadyShown = true;
 
   // Tự động mở popup lần đầu
-  setTimeout(() => {
-    new ZaloCrawlerGettingReady();
-  }, 1000);
+  // setTimeout(() => {
+  //   new ZaloCrawlerGettingReady();
+  // }, 1000);
 }
 
 if (document.readyState === "loading") {
