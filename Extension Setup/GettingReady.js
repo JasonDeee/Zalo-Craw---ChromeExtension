@@ -5,7 +5,7 @@ class ZaloCrawlerGettingReady {
   constructor() {
     this.isScrolling = false;
     this.scrollInterval = null;
-    this.scrollSpeed = 1000; // 1 giây
+    this.scrollSpeed = 2500; // 1 giây
     this.foundBlocks = [];
     this.popup = null;
 
