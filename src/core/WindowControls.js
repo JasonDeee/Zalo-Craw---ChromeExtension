@@ -107,7 +107,7 @@ class WindowControls {
     } else {
       // Change to maximize icon
       fullScreenBtn.style.backgroundImage =
-        "url(./src/Assets/Fullscreen_White_24px.svg)";
+        "url(./src/Assets/FullScreen_White_24px.svg)";
       fullScreenBtn.title = "Maximize";
     }
   }
